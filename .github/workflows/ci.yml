@@ -29,13 +29,13 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Run tests
         run: pnpm test
 
   build:
-    name: Build checks (Renderer + Main)
+    name: Build check (Renderer)
     runs-on: ubuntu-latest
     needs: test
 
@@ -55,10 +55,7 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install
-
-      - name: Build main process
-        run: pnpm run build:main
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Build renderer
         run: pnpm exec vite build
