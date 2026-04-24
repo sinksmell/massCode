@@ -3,11 +3,19 @@ import { Button } from '@/components/ui/shadcn/button'
 import { i18n, ipc, store } from '@/electron'
 
 const apiPort = ref<number>(store.preferences.get('api.port') as number)
+const mcpPort = ref<number>(store.preferences.get('api.mcpPort') as number)
 
 watch(apiPort, (value) => {
   const port = Number(value)
   if (port >= 1024 && port <= 65535) {
     store.preferences.set('api.port', port)
+  }
+})
+
+watch(mcpPort, (value) => {
+  const port = Number(value)
+  if (port >= 1024 && port <= 65535) {
+    store.preferences.set('api.mcpPort', port)
   }
 })
 </script>
@@ -34,6 +42,20 @@ watch(apiPort, (value) => {
           >
             {{ i18n.t("action.reload.app") }}
           </Button>
+        </template>
+      </UiMenuFormItem>
+
+      <UiMenuFormItem :label="i18n.t('preferences:api.mcpPort.label')">
+        <UiInput
+          v-model="mcpPort"
+          type="number"
+          min="1024"
+          max="65535"
+          size="sm"
+          class="w-32"
+        />
+        <template #description>
+          {{ i18n.t("preferences:api.mcpPort.description") }}
         </template>
       </UiMenuFormItem>
     </UiMenuFormSection>

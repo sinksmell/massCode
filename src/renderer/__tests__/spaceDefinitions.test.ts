@@ -1,22 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-async function loadSpaceDefinitions(savedNotesRoute?: string) {
+async function loadSpaceDefinitions() {
   vi.resetModules()
 
   vi.doMock('@/electron', () => ({
     i18n: {
       t: (value: string) => value,
-    },
-    store: {
-      app: {
-        get: vi.fn((key: string) => {
-          if (key === 'notes.route') {
-            return savedNotesRoute
-          }
-
-          return undefined
-        }),
-      },
     },
   }))
 
@@ -46,25 +35,14 @@ beforeEach(() => {
 })
 
 describe('spaceDefinitions', () => {
-  it('uses saved notes sub-route as Notes space target', async () => {
-    const { getSpaceDefinitions } = await loadSpaceDefinitions(
-      'notes-space/dashboard',
-    )
+  it('returns only Code space definition', async () => {
+    const { getSpaceDefinitions } = await loadSpaceDefinitions()
 
-    const notesSpace = getSpaceDefinitions().find(
-      space => space.id === 'notes',
-    )
-
-    expect(notesSpace?.to).toEqual({ name: 'notes-space/dashboard' })
-  })
-
-  it('falls back to base notes route for invalid saved route', async () => {
-    const { getSpaceDefinitions } = await loadSpaceDefinitions('garbage')
-
-    const notesSpace = getSpaceDefinitions().find(
-      space => space.id === 'notes',
-    )
-
-    expect(notesSpace?.to).toEqual({ name: 'notes-space' })
+    expect(getSpaceDefinitions()).toEqual([
+      expect.objectContaining({
+        id: 'code',
+        to: { name: 'main' },
+      }),
+    ])
   })
 })

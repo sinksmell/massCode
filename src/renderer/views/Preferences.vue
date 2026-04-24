@@ -5,15 +5,7 @@ import { i18n, store } from '@/electron'
 import { router, RouterName } from '@/router'
 import { getSpaceDefinitions } from '@/spaceDefinitions'
 import { isMac } from '@/utils'
-import {
-  Calculator,
-  Code2,
-  Globe,
-  HardDrive,
-  Notebook,
-  Palette,
-  Plug,
-} from 'lucide-vue-next'
+import { Bot, Code2, Globe, HardDrive, Palette, Plug } from 'lucide-vue-next'
 import { RouterLink, useRoute } from 'vue-router'
 
 const route = useRoute()
@@ -36,16 +28,6 @@ const nav: { label: string, name: string, icon: Component }[] = [
     icon: Code2,
   },
   {
-    label: i18n.t('preferences:notesEditor.label'),
-    name: RouterName.preferencesNotesEditor,
-    icon: Notebook,
-  },
-  {
-    label: i18n.t('preferences:math.label'),
-    name: RouterName.preferencesMath,
-    icon: Calculator,
-  },
-  {
     label: i18n.t('preferences:language.label'),
     name: RouterName.preferencesLanguage,
     icon: Globe,
@@ -59,6 +41,11 @@ const nav: { label: string, name: string, icon: Component }[] = [
     label: i18n.t('preferences:api.label'),
     name: RouterName.preferencesAPI,
     icon: Plug,
+  },
+  {
+    label: i18n.t('preferences:ai.label'),
+    name: RouterName.preferencesAI,
+    icon: Bot,
   },
 ]
 

@@ -10,17 +10,15 @@ async function setup(activeSpace: 'code' | 'notes' | 'tools' | null) {
     snippetId: undefined,
   }
   const isCodeSpaceInitialized = ref(true)
-  const isNotesSpaceInitialized = ref(true)
   const displayedSnippets = ref<{ id: number }[]>([])
   const getTags = vi.fn(async () => undefined)
   const normalizeCodeSelectionState = vi.fn(async () => undefined)
   const getFolders = vi.fn(async () => undefined)
   const getSnippets = vi.fn(async () => undefined)
-  const reloadMathFromDisk = vi.fn(async () => undefined)
   const getNoteFolders = vi.fn(async () => undefined)
+  const selectNoteFolder = vi.fn(async () => undefined)
   const getNotes = vi.fn(async () => undefined)
-  const getNoteTags = vi.fn(async () => undefined)
-  const normalizeNotesSelectionState = vi.fn(async () => undefined)
+  const selectNote = vi.fn()
 
   vi.doMock('@/composables', () => ({
     initCodeSpace: vi.fn(async () => undefined),
@@ -54,31 +52,30 @@ async function setup(activeSpace: 'code' | 'notes' | 'tools' | null) {
         await navigate()
       }),
     }),
-    useMathNotebook: () => ({
-      reloadFromDisk: reloadMathFromDisk,
-    }),
-    useNoteFolders: () => ({
-      getNoteFolders,
-    }),
     useNotes: () => ({
+      clearNotesState: vi.fn(),
       getNotes,
+      selectNote,
+      withNotesLoading: vi.fn(async (action: () => Promise<void>) => {
+        await action()
+      }),
       hasBusyNoteContentUpdates: vi.fn(() => false),
     }),
     useNotesApp: () => ({
-      isNotesSpaceInitialized,
+      focusedNoteId: ref<number | undefined>(),
+      highlightedFolderIds: ref(new Set<number>()),
+      highlightedNoteIds: ref(new Set<number>()),
+      isNotesSpaceInitialized: ref(true),
+      notesState: {},
+      pendingNotesNavigation: ref(false),
     }),
     useNotesSpaceInitialization: () => ({
       initNotesSpace: vi.fn(async () => undefined),
     }),
-    useNotesDashboard: () => ({
-      getNotesDashboard: vi.fn(async () => undefined),
-    }),
-    useNotesGraph: () => ({
-      getNotesGraph: vi.fn(async () => undefined),
-    }),
-    normalizeNotesSelectionState,
-    useNoteTags: () => ({
-      getNoteTags,
+    useNoteFolders: () => ({
+      clearFolderSelection: vi.fn(),
+      getNoteFolders,
+      selectNoteFolder,
     }),
     useSnippets: () => ({
       selectSnippet: vi.fn(),
@@ -140,13 +137,11 @@ async function setup(activeSpace: 'code' | 'notes' | 'tools' | null) {
     getTags,
     getNoteFolders,
     getNotes,
-    getNoteTags,
+    selectNote,
     getSnippets,
     ipcHandlers,
     isCodeSpaceInitialized,
-    isNotesSpaceInitialized,
     normalizeCodeSelectionState,
-    normalizeNotesSelectionState,
   }
 }
 
@@ -159,19 +154,17 @@ afterEach(() => {
 })
 
 describe('registerSystemListeners', () => {
-  it('invalidates code and notes initialization after storage sync', async () => {
+  it('invalidates code initialization and refreshes code data after storage sync', async () => {
     const context = await setup('tools')
 
     context.ipcHandlers.get('system:storage-synced')?.(undefined)
     await vi.advanceTimersByTimeAsync(300)
 
     expect(context.isCodeSpaceInitialized.value).toBe(false)
-    expect(context.isNotesSpaceInitialized.value).toBe(false)
-    expect(context.getFolders).not.toHaveBeenCalled()
+    expect(context.getFolders).toHaveBeenCalledTimes(1)
+    expect(context.getTags).toHaveBeenCalledTimes(1)
+    expect(context.normalizeCodeSelectionState).toHaveBeenCalledTimes(1)
     expect(context.getSnippets).not.toHaveBeenCalled()
-    expect(context.getNoteFolders).not.toHaveBeenCalled()
-    expect(context.getNotes).not.toHaveBeenCalled()
-    expect(context.getNoteTags).not.toHaveBeenCalled()
   })
 
   it('refreshes code space through tags and normalized selection state', async () => {
@@ -186,15 +179,15 @@ describe('registerSystemListeners', () => {
     expect(context.getSnippets).not.toHaveBeenCalled()
   })
 
-  it('refreshes notes space through tags and normalized selection state', async () => {
+  it('refreshes code state even when active space resolves to notes', async () => {
     const context = await setup('notes')
 
     context.ipcHandlers.get('system:storage-synced')?.(undefined)
     await vi.advanceTimersByTimeAsync(300)
 
-    expect(context.getNoteFolders).toHaveBeenCalledTimes(1)
-    expect(context.getNoteTags).toHaveBeenCalledTimes(1)
-    expect(context.normalizeNotesSelectionState).toHaveBeenCalledTimes(1)
+    expect(context.getFolders).toHaveBeenCalledTimes(1)
+    expect(context.getTags).toHaveBeenCalledTimes(1)
+    expect(context.normalizeCodeSelectionState).toHaveBeenCalledTimes(1)
     expect(context.getNotes).not.toHaveBeenCalled()
   })
 })

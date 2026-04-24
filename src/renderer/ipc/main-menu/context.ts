@@ -1,5 +1,4 @@
 import type { LayoutMode } from '@/composables/layoutModes'
-import type { NotesEditorMode } from '@/composables/spaces/notes/useNotesApp'
 import type { SpaceId } from '@/spaceDefinitions'
 import type { MainMenuContext, MainMenuLayoutMode } from '~/main/types/menu'
 
@@ -11,19 +10,10 @@ interface CodeMenuState {
   isJsonPreviewShown: boolean
 }
 
-interface NotesMenuState {
-  layoutMode: LayoutMode
-  hasSelectedNote: boolean
-  isMindmapShown: boolean
-  isPresentationShown: boolean
-  mode: NotesEditorMode
-}
-
 interface CreateMainMenuContextOptions {
   activeSpaceId: SpaceId | null
   compactListMode: boolean
   code: CodeMenuState
-  notes: NotesMenuState
 }
 
 const sharedLayoutModes: MainMenuLayoutMode[] = [
@@ -61,66 +51,6 @@ export function createMainMenuContext(
         canPreviewJson: options.code.canPreviewJson,
         isJsonPreviewShown: options.code.isJsonPreviewShown,
         canAdjustFontSize: true,
-      },
-    }
-  }
-
-  if (options.activeSpaceId === 'notes') {
-    return {
-      file: {
-        primaryAction: 'new-note',
-        secondaryAction: 'new-folder',
-        canCreateFragment: false,
-      },
-      view: {
-        layoutMode: options.notes.layoutMode,
-        layoutModes: sharedLayoutModes,
-        canToggleCompactMode: true,
-        canToggleMindmap: options.notes.hasSelectedNote,
-        isCompactMode: options.compactListMode,
-        isMindmapShown: options.notes.isMindmapShown,
-        canTogglePresentation: options.notes.hasSelectedNote,
-        isPresentationShown: options.notes.isPresentationShown,
-      },
-      editor: {
-        kind: 'notes',
-        noteMode: options.notes.mode,
-        canFormat: false,
-        canPreviewCode: false,
-        isCodePreviewShown: false,
-        canPreviewJson: false,
-        isJsonPreviewShown: false,
-        canAdjustFontSize: true,
-      },
-    }
-  }
-
-  if (options.activeSpaceId === 'math') {
-    return {
-      file: {
-        primaryAction: 'new-sheet',
-        secondaryAction: null,
-        canCreateFragment: false,
-      },
-      view: {
-        layoutMode: null,
-        layoutModes: [],
-        canToggleCompactMode: true,
-        canToggleMindmap: false,
-        isCompactMode: options.compactListMode,
-        isMindmapShown: false,
-        canTogglePresentation: false,
-        isPresentationShown: false,
-      },
-      editor: {
-        kind: null,
-        noteMode: null,
-        canFormat: false,
-        canPreviewCode: false,
-        isCodePreviewShown: false,
-        canPreviewJson: false,
-        isJsonPreviewShown: false,
-        canAdjustFontSize: false,
       },
     }
   }

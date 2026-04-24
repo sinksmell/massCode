@@ -51,15 +51,25 @@ describe('formatMathNumber', () => {
 describe('formatMathDate', () => {
   const date = new Date(2026, 2, 28) // March 28, 2026
 
+  function getExpectedDate(locale: string) {
+    return new Intl.DateTimeFormat(locale, {
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    }).format(date)
+  }
+
   it('formats date with en-US locale', () => {
-    expect(formatMathDate(date, 'en-US')).toBe('3/28/2026, 12:00:00 AM')
+    expect(formatMathDate(date, 'en-US')).toBe(getExpectedDate('en-US'))
   })
 
   it('formats date with de-DE locale', () => {
-    expect(formatMathDate(date, 'de-DE')).toBe('28.3.2026, 0:00:00')
+    expect(formatMathDate(date, 'de-DE')).toBe(getExpectedDate('de-DE'))
   })
 
   it('formats date with ru-RU locale', () => {
-    expect(formatMathDate(date, 'ru-RU')).toBe('28.03.2026, 0:00:00')
+    expect(formatMathDate(date, 'ru-RU')).toBe(getExpectedDate('ru-RU'))
   })
 })

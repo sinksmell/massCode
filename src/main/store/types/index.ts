@@ -104,6 +104,13 @@ export interface MathSettings {
   dateFormat: 'numeric' | 'short' | 'long'
 }
 
+export interface AIEmbeddingSettings {
+  provider: string
+  endpoint: string
+  model: string
+  apiKey: string
+}
+
 export interface PreferencesStore {
   appearance: {
     theme: string
@@ -113,6 +120,7 @@ export interface PreferencesStore {
   }
   api: {
     port: number
+    mcpPort: number
   }
   storage: StorageSettings & {
     rootPath: string
@@ -123,6 +131,9 @@ export interface PreferencesStore {
     markdown: MarkdownSettings
   }
   math: MathSettings
+  ai: {
+    embedding: AIEmbeddingSettings
+  }
 }
 
 export interface MathSheet {

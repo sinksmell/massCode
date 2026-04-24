@@ -49,20 +49,6 @@ watch(
   { immediate: true },
 )
 
-watch(
-  () => route.name,
-  (routeName) => {
-    if (
-      routeName === RouterName.notesSpace
-      || routeName === RouterName.notesDashboard
-      || routeName === RouterName.notesGraph
-    ) {
-      store.app.set('notes.route', routeName)
-    }
-  },
-  { immediate: true },
-)
-
 useTheme()
 
 function restoreSavedSpace() {
@@ -71,8 +57,11 @@ function restoreSavedSpace() {
     const space = getSpaceDefinitions().find(s => s.id === savedSpaceId)
     if (space) {
       router.replace(space.to)
+      return
     }
   }
+
+  router.replace({ name: RouterName.main })
 }
 
 async function init() {
@@ -95,10 +84,7 @@ init()
       class="absolute top-0 z-50 h-3 w-full select-none"
     />
     <RouterView v-slot="{ Component, route: currentRoute }">
-      <AppSpaceShell
-        v-if="isSpaceRouteName(currentRoute.name)"
-        :show-rail="currentRoute.name !== RouterName.notesPresentation"
-      >
+      <AppSpaceShell v-if="isSpaceRouteName(currentRoute.name)">
         <component :is="Component" />
       </AppSpaceShell>
       <component
@@ -108,11 +94,16 @@ init()
     </RouterView>
     <div
       v-if="isLoaderVisible"
-      class="bg-background absolute inset-0 z-50 flex flex-col items-center justify-center"
+      class="bg-background/92 absolute inset-0 z-50 flex flex-col items-center justify-center backdrop-blur-sm"
     >
       <template v-if="showLoader">
-        {{ i18n.t("loading") }}
-        <LoaderCircle class="text-muted-foreground mt-4 h-5 w-5 animate-spin" />
+        <UiText
+          variant="caption"
+          class="font-mono tracking-tight"
+        >
+          {{ i18n.t("loading") }}
+        </UiText>
+        <LoaderCircle class="text-muted-foreground mt-3 h-4 w-4 animate-spin" />
       </template>
     </div>
     <Toaster style="--width: 356px; --offset: 12px" />

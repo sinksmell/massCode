@@ -82,6 +82,10 @@ const folderName = computed(() => {
   return i18n.t('common.inbox')
 })
 
+function formatSnippetDate(date: number) {
+  return format(new Date(date), 'yyyy-MM-dd HH:mm')
+}
+
 function onSnippetClick(id: number, event: MouseEvent) {
   clearHistory()
   selectSnippet(id, event.shiftKey)
@@ -243,7 +247,7 @@ onClickOutside(snippetRef, () => {
   <div
     ref="snippetRef"
     data-snippet-item
-    class="border-border relative border-b px-1 focus-visible:outline-none"
+    class="border-border/70 relative border-b px-1.5 focus-visible:outline-none"
     :class="{
       'is-selected': isSelected,
       'is-multi-selected': isInMultiSelection,
@@ -258,11 +262,11 @@ onClickOutside(snippetRef, () => {
     <ContextMenu.ContextMenu>
       <ContextMenu.ContextMenuTrigger>
         <div
-          class="select-none"
+          class="rounded-md border border-transparent transition-colors select-none"
           :class="
             isCompactListMode
-              ? 'flex items-center gap-2 px-2 py-1.5'
-              : 'flex flex-col p-2'
+              ? 'flex items-center gap-2 px-2.5 py-2'
+              : 'flex flex-col p-2.5'
           "
         >
           <div
@@ -276,22 +280,22 @@ onClickOutside(snippetRef, () => {
             as="div"
             variant="xs"
             muted
-            class="meta shrink-0"
+            class="meta shrink-0 font-mono"
           >
-            {{ format(new Date(snippet.createdAt), "dd.MM.yyyy") }}
+            {{ formatSnippetDate(snippet.createdAt) }}
           </UiText>
           <UiText
             v-else
             as="div"
             variant="xs"
             muted
-            class="meta flex justify-between"
+            class="meta flex justify-between font-mono"
           >
             <div>
               {{ folderName }}
             </div>
             <div>
-              {{ format(new Date(snippet.createdAt), "dd.MM.yyyy") }}
+              {{ formatSnippetDate(snippet.createdAt) }}
             </div>
           </UiText>
         </div>
@@ -339,24 +343,40 @@ onClickOutside(snippetRef, () => {
 @reference "../../styles.css";
 [data-snippet-item] {
   &:not(.is-selected):not(.is-focused):not(.is-multi-selected) {
-    @apply hover:bg-accent-hover hover:rounded-md;
+    @apply hover:bg-accent-hover/70;
+
+    > [data-radix-menu-trigger] > div {
+      @apply hover:border-border/40;
+    }
   }
   &.is-selected {
-    @apply bg-accent text-accent-foreground z-10 rounded-md border-transparent;
+    @apply bg-accent/90 text-accent-foreground z-10 rounded-md border-transparent;
     .meta {
       @apply text-accent-foreground;
     }
+
+    > [data-radix-menu-trigger] > div {
+      @apply border-border/70;
+    }
   }
   &.is-multi-selected {
-    @apply bg-accent text-accent-foreground z-10 rounded-md border-transparent;
+    @apply bg-accent/90 text-accent-foreground z-10 rounded-md border-transparent;
     .meta {
       @apply text-accent-foreground;
+    }
+
+    > [data-radix-menu-trigger] > div {
+      @apply border-border/70;
     }
   }
   &.is-focused:not(.is-multi-selected) {
     @apply bg-primary text-primary-foreground z-10 rounded-md border-transparent;
     .meta {
       @apply text-primary-foreground;
+    }
+
+    > [data-radix-menu-trigger] > div {
+      @apply border-primary/45;
     }
   }
   &.is-highlighted {

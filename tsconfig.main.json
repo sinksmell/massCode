@@ -15,5 +15,11 @@
     "src/main/**/*",
     "src/shared/**/*",
     "src/main/i18n/locales/**/*.json"
+  ],
+  "exclude": [
+    "src/main/**/__tests__/**",
+    "src/main/**/*.test.ts",
+    "src/shared/**/__tests__/**",
+    "src/shared/**/*.test.ts"
   ]
 }
