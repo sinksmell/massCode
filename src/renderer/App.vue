@@ -94,11 +94,16 @@ init()
     </RouterView>
     <div
       v-if="isLoaderVisible"
-      class="bg-background absolute inset-0 z-50 flex flex-col items-center justify-center"
+      class="bg-background/92 absolute inset-0 z-50 flex flex-col items-center justify-center backdrop-blur-sm"
     >
       <template v-if="showLoader">
-        {{ i18n.t("loading") }}
-        <LoaderCircle class="text-muted-foreground mt-4 h-5 w-5 animate-spin" />
+        <UiText
+          variant="caption"
+          class="font-mono tracking-tight"
+        >
+          {{ i18n.t("loading") }}
+        </UiText>
+        <LoaderCircle class="text-muted-foreground mt-3 h-4 w-4 animate-spin" />
       </template>
     </div>
     <Toaster style="--width: 356px; --offset: 12px" />

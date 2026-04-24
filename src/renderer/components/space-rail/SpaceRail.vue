@@ -29,11 +29,11 @@ watch(
 
 <template>
   <nav
-    class="flex h-full flex-col items-center px-1.5 pb-3"
+    class="flex h-full flex-col items-center px-2 pb-3"
     :class="isMac ? 'pt-[calc(var(--content-top-offset)+8px)]' : 'pt-3'"
     :aria-label="i18n.t('spaces.label')"
   >
-    <div class="flex w-full flex-col gap-1">
+    <div class="flex w-full flex-col gap-1.5">
       <RouterLink
         v-for="space in spaces"
         :key="space.id"
@@ -45,11 +45,11 @@ watch(
           <Tooltip.TooltipTrigger as-child>
             <button
               type="button"
-              class="text-muted-foreground flex w-full cursor-default flex-col items-center gap-1 rounded-md px-2 py-2 transition-colors"
+              class="text-muted-foreground/90 flex w-full cursor-default flex-col items-center gap-1 rounded-lg border border-transparent px-2 py-2 transition-all"
               :class="
                 space.active
-                  ? 'bg-accent text-accent-foreground shadow-sm'
-                  : 'hover:bg-accent-hover/80'
+                  ? 'bg-accent text-accent-foreground border-border/70 shadow-sm'
+                  : 'hover:bg-accent-hover/70 hover:border-border/40'
               "
               @click="navigate"
             >
@@ -60,7 +60,7 @@ watch(
               <UiText
                 variant="caption"
                 weight="medium"
-                class="leading-none select-none"
+                class="font-mono leading-none tracking-tight select-none"
               >
                 {{ space.label }}
               </UiText>
@@ -91,7 +91,7 @@ watch(
         as="div"
         variant="caption"
         weight="medium"
-        class="text-muted-foreground/55 leading-none select-none"
+        class="text-muted-foreground/55 font-mono leading-none tracking-tight select-none"
       >
         v{{ packageJson.version }}
       </UiText>
