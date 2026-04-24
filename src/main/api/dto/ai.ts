@@ -41,10 +41,24 @@ const aiRagRebuildResponse = t.Object({
   indexed: t.Number(),
 })
 
+const aiEmbeddingTestRequest = t.Object({
+  provider: t.String(),
+  endpoint: t.String(),
+  model: t.String(),
+  apiKey: t.String(),
+})
+
+const aiEmbeddingTestResponse = t.Object({
+  ok: t.Boolean(),
+  status: t.Number(),
+})
+
 export const aiDTO = new Elysia().model({
   aiIngestMcpRequest,
   aiIngestMcpResponse,
   aiRagQueryRequest,
   aiRagQueryResponse,
   aiRagRebuildResponse,
+  aiEmbeddingTestRequest,
+  aiEmbeddingTestResponse,
 })

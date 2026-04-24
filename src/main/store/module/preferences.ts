@@ -44,6 +44,7 @@ const PREFERENCES_DEFAULTS: PreferencesStore = {
   },
   api: {
     port: 4321,
+    mcpPort: 4322,
   },
   storage: {
     rootPath: storagePath,
@@ -239,6 +240,11 @@ function sanitizePreferences(value: unknown): PreferencesStore {
         apiSource,
         'port',
         readNumber(source, 'apiPort', PREFERENCES_DEFAULTS.api.port),
+      ),
+      mcpPort: readNumber(
+        apiSource,
+        'mcpPort',
+        PREFERENCES_DEFAULTS.api.mcpPort,
       ),
     },
     storage: {

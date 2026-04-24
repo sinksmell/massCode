@@ -120,5 +120,54 @@ app
       },
     },
   )
+  .post(
+    '/embedding/test',
+    async ({ body, status }) => {
+      try {
+        const response = await fetch(body.endpoint, {
+          method: 'POST',
+          headers: {
+            'Authorization': body.apiKey ? `Bearer ${body.apiKey}` : '',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            input: ['connectivity-check'],
+            model: body.model,
+          }),
+        })
+
+        if (!response.ok) {
+          return status(400, {
+            ok: false,
+            status: response.status,
+          })
+        }
+
+        return {
+          ok: true,
+          status: response.status,
+        }
+      }
+      catch (error) {
+        console.error('Embedding endpoint test failed:', error)
+        return status(500, {
+          ok: false,
+          status: 500,
+        })
+      }
+    },
+    {
+      body: 'aiEmbeddingTestRequest',
+      response: {
+        200: 'aiEmbeddingTestResponse',
+        400: 'aiEmbeddingTestResponse',
+        500: 'aiEmbeddingTestResponse',
+      },
+      detail: {
+        tags: ['AI'],
+        summary: 'Test embedding endpoint connectivity',
+      },
+    },
+  )
 
 export default app

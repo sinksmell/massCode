@@ -4,6 +4,7 @@ import { createRequire } from 'node:module'
 import path from 'node:path'
 import { app, BrowserWindow, ipcMain, Menu, protocol } from 'electron'
 import { initApi } from './api'
+import { initMcpApi } from './api/mcp'
 import { registerIPC } from './ipc'
 import { startThemeWatcher, stopThemeWatcher } from './ipc/handlers/theme'
 import { createMainMenu } from './menu/main'
@@ -208,6 +209,13 @@ else {
     }
     catch (error) {
       log('Error initializing API', error)
+    }
+
+    try {
+      await initMcpApi()
+    }
+    catch (error) {
+      log('Error initializing MCP API', error)
     }
 
     try {

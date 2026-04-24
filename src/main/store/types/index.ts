@@ -120,6 +120,7 @@ export interface PreferencesStore {
   }
   api: {
     port: number
+    mcpPort: number
   }
   storage: StorageSettings & {
     rootPath: string
