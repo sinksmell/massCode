@@ -1,4 +1,5 @@
 import type {
+  AIEmbeddingSettings,
   EditorSettings,
   MarkdownSettings,
   MathSettings,
@@ -27,6 +28,13 @@ const MATH_DEFAULTS: MathSettings = {
   dateFormat: 'numeric',
 }
 
+const AI_EMBEDDING_DEFAULTS: AIEmbeddingSettings = {
+  provider: 'openai-compatible',
+  endpoint: 'https://api.siliconflow.cn/v1/embeddings',
+  model: 'BAAI/bge-m3',
+  apiKey: '',
+}
+
 const PREFERENCES_DEFAULTS: PreferencesStore = {
   appearance: {
     theme: 'auto',
@@ -49,6 +57,9 @@ const PREFERENCES_DEFAULTS: PreferencesStore = {
     },
   },
   math: MATH_DEFAULTS,
+  ai: {
+    embedding: AI_EMBEDDING_DEFAULTS,
+  },
 }
 
 function sanitizeCodeEditorSettings(value: unknown): EditorSettings {
@@ -170,6 +181,17 @@ function sanitizeMathSettings(value: unknown): MathSettings {
   }
 }
 
+function sanitizeAIEmbeddingSettings(value: unknown): AIEmbeddingSettings {
+  const source = asRecord(value)
+
+  return {
+    provider: readString(source, 'provider', AI_EMBEDDING_DEFAULTS.provider),
+    endpoint: readString(source, 'endpoint', AI_EMBEDDING_DEFAULTS.endpoint),
+    model: readString(source, 'model', AI_EMBEDDING_DEFAULTS.model),
+    apiKey: readString(source, 'apiKey', AI_EMBEDDING_DEFAULTS.apiKey),
+  }
+}
+
 function sanitizePreferences(value: unknown): PreferencesStore {
   const source = asRecord(value)
   const appearanceSource = asRecord(source.appearance)
@@ -190,6 +212,8 @@ function sanitizePreferences(value: unknown): PreferencesStore {
       ? asRecord(editorSource.markdown)
       : asRecord(source.markdown)
   const mathSource = asRecord(source.math)
+  const aiSource = asRecord(source.ai)
+  const aiEmbeddingSource = asRecord(aiSource.embedding)
 
   return {
     appearance: {
@@ -239,6 +263,9 @@ function sanitizePreferences(value: unknown): PreferencesStore {
       markdown: sanitizeMarkdownSettings(markdownSource),
     },
     math: sanitizeMathSettings(mathSource),
+    ai: {
+      embedding: sanitizeAIEmbeddingSettings(aiEmbeddingSource),
+    },
   }
 }
 

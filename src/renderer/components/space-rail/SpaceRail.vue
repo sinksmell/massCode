@@ -36,7 +36,7 @@ watch(
 
 <template>
   <nav
-    class="flex h-full flex-col items-center px-2 pb-3"
+    class="flex h-full flex-col items-center px-1.5 pb-3"
     :class="isMac ? 'pt-[calc(var(--content-top-offset)+8px)]' : 'pt-3'"
     :aria-label="i18n.t('spaces.label')"
   >
@@ -52,11 +52,11 @@ watch(
           <Tooltip.TooltipTrigger as-child>
             <button
               type="button"
-              class="text-muted-foreground flex w-full cursor-default flex-col items-center gap-1 rounded-lg px-2 py-2 transition-colors"
+              class="text-muted-foreground flex w-full cursor-default flex-col items-center gap-1 rounded-md px-2 py-2 transition-colors"
               :class="
                 space.active
-                  ? 'bg-accent text-accent-foreground'
-                  : 'hover:bg-accent-hover'
+                  ? 'bg-accent text-accent-foreground shadow-sm'
+                  : 'hover:bg-accent-hover/80'
               "
               @click="navigate"
             >

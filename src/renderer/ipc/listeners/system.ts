@@ -1,15 +1,7 @@
 import {
   normalizeCodeSelectionState,
-  normalizeNotesSelectionState,
   useApp,
   useFolders,
-  useMathNotebook,
-  useNoteFolders,
-  useNotes,
-  useNotesApp,
-  useNotesDashboard,
-  useNotesGraph,
-  useNoteTags,
   useSnippets,
   useSnippetUpdate,
   useSonner,
@@ -17,8 +9,6 @@ import {
   useTags,
 } from '@/composables'
 import { i18n, ipc } from '@/electron'
-import { router, RouterName } from '@/router'
-import { getActiveSpaceId } from '@/spaceDefinitions'
 import { repository } from '../../../../package.json'
 import { handleDeepLink } from './deepLinks'
 
@@ -28,13 +18,6 @@ const { getTags } = useTags()
 const { selectFirstSnippet, displayedSnippets } = useSnippets()
 const { hasBusyContentUpdates } = useSnippetUpdate()
 const { shouldSkipStorageSyncRefresh } = useStorageMutation()
-const { reloadFromDisk: reloadMathFromDisk } = useMathNotebook()
-const { isNotesSpaceInitialized } = useNotesApp()
-const { getNoteFolders } = useNoteFolders()
-const { hasBusyNoteContentUpdates } = useNotes()
-const { getNoteTags } = useNoteTags()
-const { getNotesDashboard } = useNotesDashboard()
-const { getNotesGraph } = useNotesGraph()
 const { sonner } = useSonner()
 let storageSyncDebounceTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -59,34 +42,8 @@ async function refreshCodeSpace() {
 }
 
 async function refreshAfterStorageSync() {
-  const activeSpace = getActiveSpaceId()
   isCodeSpaceInitialized.value = false
-  isNotesSpaceInitialized.value = false
-
-  switch (activeSpace) {
-    case 'math':
-      await reloadMathFromDisk()
-      break
-    case 'notes':
-      await getNoteFolders()
-      await getNoteTags()
-      await normalizeNotesSelectionState()
-
-      if (router.currentRoute.value.name === RouterName.notesDashboard) {
-        await getNotesDashboard()
-      }
-
-      if (router.currentRoute.value.name === RouterName.notesGraph) {
-        await getNotesGraph()
-      }
-      break
-    case 'tools':
-      break
-    case 'code':
-    default:
-      await refreshCodeSpace()
-      break
-  }
+  await refreshCodeSpace()
 }
 
 function scheduleStorageSyncRefresh() {
@@ -96,11 +53,7 @@ function scheduleStorageSyncRefresh() {
   }
 
   storageSyncDebounceTimer = setTimeout(() => {
-    if (
-      shouldSkipStorageSyncRefresh()
-      || hasBusyContentUpdates()
-      || hasBusyNoteContentUpdates()
-    ) {
+    if (shouldSkipStorageSyncRefresh() || hasBusyContentUpdates()) {
       scheduleStorageSyncRefresh()
       return
     }

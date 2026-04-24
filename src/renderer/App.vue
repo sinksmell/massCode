@@ -49,20 +49,6 @@ watch(
   { immediate: true },
 )
 
-watch(
-  () => route.name,
-  (routeName) => {
-    if (
-      routeName === RouterName.notesSpace
-      || routeName === RouterName.notesDashboard
-      || routeName === RouterName.notesGraph
-    ) {
-      store.app.set('notes.route', routeName)
-    }
-  },
-  { immediate: true },
-)
-
 useTheme()
 
 function restoreSavedSpace() {
@@ -71,8 +57,11 @@ function restoreSavedSpace() {
     const space = getSpaceDefinitions().find(s => s.id === savedSpaceId)
     if (space) {
       router.replace(space.to)
+      return
     }
   }
+
+  router.replace({ name: RouterName.main })
 }
 
 async function init() {
@@ -95,10 +84,7 @@ init()
       class="absolute top-0 z-50 h-3 w-full select-none"
     />
     <RouterView v-slot="{ Component, route: currentRoute }">
-      <AppSpaceShell
-        v-if="isSpaceRouteName(currentRoute.name)"
-        :show-rail="currentRoute.name !== RouterName.notesPresentation"
-      >
+      <AppSpaceShell v-if="isSpaceRouteName(currentRoute.name)">
         <component :is="Component" />
       </AppSpaceShell>
       <component
