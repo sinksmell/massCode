@@ -12,17 +12,21 @@ const props = withDefaults(defineProps<Props>(), {
 
 <template>
   <div
-    class="grid h-screen overflow-hidden"
-    :class="props.showRail ? 'grid-cols-[72px_1fr]' : 'grid-cols-[1fr]'"
+    class="bg-background grid h-screen gap-2 overflow-hidden p-2"
+    :class="
+      props.showRail ? 'grid-cols-[72px_minmax(0,1fr)]' : 'grid-cols-[1fr]'
+    "
   >
     <div
       v-if="props.showRail"
-      class="bg-background border-border/70 border-r"
+      class="bg-card/70 border-border/60 rounded-xl border backdrop-blur"
       :class="isMac && 'mt-2.5'"
     >
       <SpaceRail />
     </div>
-    <div class="min-h-0 min-w-0 overflow-hidden">
+    <div
+      class="bg-card/40 border-border/60 min-h-0 min-w-0 overflow-hidden rounded-xl border shadow-sm"
+    >
       <slot />
     </div>
   </div>

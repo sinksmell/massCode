@@ -82,6 +82,10 @@ const folderName = computed(() => {
   return i18n.t('common.inbox')
 })
 
+function formatSnippetDate(date: number) {
+  return format(new Date(date), 'yyyy-MM-dd HH:mm')
+}
+
 function onSnippetClick(id: number, event: MouseEvent) {
   clearHistory()
   selectSnippet(id, event.shiftKey)
@@ -278,7 +282,7 @@ onClickOutside(snippetRef, () => {
             muted
             class="meta shrink-0"
           >
-            {{ format(new Date(snippet.createdAt), "dd.MM.yyyy") }}
+            {{ formatSnippetDate(snippet.createdAt) }}
           </UiText>
           <UiText
             v-else
@@ -291,7 +295,7 @@ onClickOutside(snippetRef, () => {
               {{ folderName }}
             </div>
             <div>
-              {{ format(new Date(snippet.createdAt), "dd.MM.yyyy") }}
+              {{ formatSnippetDate(snippet.createdAt) }}
             </div>
           </UiText>
         </div>

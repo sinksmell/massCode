@@ -9,10 +9,16 @@ defineProps<Props>()
 
 <template>
   <div>
-    <div class="flex h-7 items-center justify-between pl-1 select-none">
-      <div class="truncate leading-5 font-bold">
+    <div
+      class="text-foreground/90 flex h-8 items-center justify-between px-1.5 select-none"
+    >
+      <UiText
+        variant="caption"
+        weight="semibold"
+        class="truncate tracking-wide uppercase"
+      >
         {{ title }}
-      </div>
+      </UiText>
       <div
         v-if="$slots.actions"
         class="flex items-center gap-1"

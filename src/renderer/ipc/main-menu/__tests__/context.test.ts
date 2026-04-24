@@ -13,13 +13,6 @@ describe('createMainMenuContext', () => {
         isJsonPreviewShown: true,
         layoutMode: 'list-editor',
       },
-      notes: {
-        hasSelectedNote: false,
-        isMindmapShown: false,
-        isPresentationShown: false,
-        layoutMode: 'all-panels',
-        mode: 'livePreview',
-      },
     })
 
     expect(context.file).toEqual({
@@ -49,7 +42,7 @@ describe('createMainMenuContext', () => {
     })
   })
 
-  it('builds notes-space menu context with markdown view actions', () => {
+  it('falls back to neutral context for non-code spaces', () => {
     const context = createMainMenuContext({
       activeSpaceId: 'notes',
       compactListMode: false,
@@ -60,43 +53,36 @@ describe('createMainMenuContext', () => {
         isJsonPreviewShown: false,
         layoutMode: 'all-panels',
       },
-      notes: {
-        hasSelectedNote: true,
-        isMindmapShown: true,
-        isPresentationShown: false,
-        layoutMode: 'editor-only',
-        mode: 'preview',
-      },
     })
 
     expect(context.file).toEqual({
       canCreateFragment: false,
-      primaryAction: 'new-note',
-      secondaryAction: 'new-folder',
+      primaryAction: null,
+      secondaryAction: null,
     })
     expect(context.view).toEqual({
-      canToggleCompactMode: true,
-      canToggleMindmap: true,
-      canTogglePresentation: true,
+      canToggleCompactMode: false,
+      canToggleMindmap: false,
+      canTogglePresentation: false,
       isCompactMode: false,
-      isMindmapShown: true,
+      isMindmapShown: false,
       isPresentationShown: false,
-      layoutMode: 'editor-only',
-      layoutModes: ['all-panels', 'list-editor', 'editor-only'],
+      layoutMode: null,
+      layoutModes: [],
     })
     expect(context.editor).toEqual({
-      canAdjustFontSize: true,
+      canAdjustFontSize: false,
       canFormat: false,
       canPreviewCode: false,
       canPreviewJson: false,
       isCodePreviewShown: false,
       isJsonPreviewShown: false,
-      kind: 'notes',
-      noteMode: 'preview',
+      kind: null,
+      noteMode: null,
     })
   })
 
-  it('builds math-space menu context with only primary creation action', () => {
+  it('returns neutral context for math space', () => {
     const context = createMainMenuContext({
       activeSpaceId: 'math',
       compactListMode: true,
@@ -107,25 +93,18 @@ describe('createMainMenuContext', () => {
         isJsonPreviewShown: false,
         layoutMode: 'all-panels',
       },
-      notes: {
-        hasSelectedNote: false,
-        isMindmapShown: false,
-        isPresentationShown: false,
-        layoutMode: 'all-panels',
-        mode: 'livePreview',
-      },
     })
 
     expect(context.file).toEqual({
       canCreateFragment: false,
-      primaryAction: 'new-sheet',
+      primaryAction: null,
       secondaryAction: null,
     })
     expect(context.view).toEqual({
-      canToggleCompactMode: true,
+      canToggleCompactMode: false,
       canToggleMindmap: false,
       canTogglePresentation: false,
-      isCompactMode: true,
+      isCompactMode: false,
       isMindmapShown: false,
       isPresentationShown: false,
       layoutMode: null,
@@ -153,13 +132,6 @@ describe('createMainMenuContext', () => {
         isCodePreviewShown: false,
         isJsonPreviewShown: false,
         layoutMode: 'all-panels',
-      },
-      notes: {
-        hasSelectedNote: false,
-        isMindmapShown: false,
-        isPresentationShown: false,
-        layoutMode: 'all-panels',
-        mode: 'livePreview',
       },
     })
 

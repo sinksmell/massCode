@@ -51,8 +51,10 @@ function onKeydown(event: KeyboardEvent) {
 </script>
 
 <template>
-  <div class="border-border mt-[var(--content-top-offset)] mb-2 border-b pb-1">
-    <div class="flex items-center px-1">
+  <div class="mt-[var(--content-top-offset)] mb-2 px-2">
+    <div
+      class="bg-muted/35 border-border/60 focus-within:border-border flex items-center rounded-lg border px-1.5 py-1 shadow-sm"
+    >
       <Search class="text-muted-foreground ml-1 h-4 w-4" />
       <div class="flex-grow">
         <UiInput
@@ -67,6 +69,7 @@ function onKeydown(event: KeyboardEvent) {
       <Button
         v-if="searchQuery"
         variant="ghost"
+        class="h-7 w-7 px-0"
         @click="clearSearch(true)"
       >
         <X class="h-4 w-4" />
@@ -74,6 +77,7 @@ function onKeydown(event: KeyboardEvent) {
       <UiActionButton
         v-if="!isSearch"
         :tooltip="i18n.t('action.new.snippet')"
+        class="h-7 w-7"
         @click="createSnippetAndSelect"
       >
         <Plus class="h-4 w-4" />

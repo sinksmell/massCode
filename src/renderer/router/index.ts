@@ -10,6 +10,7 @@ export const RouterName = {
   preferencesNotesEditor: 'preferences/notes-editor',
   preferencesMath: 'preferences/math',
   preferencesAPI: 'preferences/api',
+  preferencesAI: 'preferences/ai',
   devtools: 'devtools',
   devtoolsCaseConverter: 'devtools/case-converter',
   devtoolsTextToUnicode: 'devtools/text-to-unicode',
@@ -86,145 +87,44 @@ const routes = [
         name: RouterName.preferencesAPI,
         component: () => import('@/components/preferences/API.vue'),
       },
+      {
+        path: 'ai',
+        name: RouterName.preferencesAI,
+        component: () => import('@/components/preferences/AI.vue'),
+      },
     ],
   },
   {
     path: '/devtools',
     name: RouterName.devtools,
-    component: () => import('@/views/Devtools.vue'),
-    redirect: () => {
-      const saved = sessionStorage.getItem('devtools:lastRoute')
-      return { name: saved || RouterName.devtoolsCaseConverter }
-    },
-    children: [
-      {
-        path: 'text/case-converter',
-        name: RouterName.devtoolsCaseConverter,
-        component: () =>
-          import('@/components/devtools/converters/CaseConverter.vue'),
-      },
-      {
-        path: 'text/to-unicode',
-        name: RouterName.devtoolsTextToUnicode,
-        component: () =>
-          import('@/components/devtools/converters/TextToUnicode.vue'),
-      },
-      {
-        path: 'text/to-ascii',
-        name: RouterName.devtoolsTextToAscii,
-        component: () =>
-          import('@/components/devtools/converters/TextToAsciiBinary.vue'),
-      },
-      {
-        path: 'base64-converter',
-        name: RouterName.devtoolsBase64Converter,
-        component: () =>
-          import('@/components/devtools/converters/Base64Converter.vue'),
-      },
-      {
-        path: 'json-to-yaml',
-        name: RouterName.devtoolsJsonToYaml,
-        component: () =>
-          import('@/components/devtools/converters/JsonToYaml.vue'),
-      },
-      {
-        path: 'json-to-toml',
-        name: RouterName.devtoolsJsonToToml,
-        component: () =>
-          import('@/components/devtools/converters/JsonToToml.vue'),
-      },
-      {
-        path: 'json-to-xml',
-        name: RouterName.devtoolsJsonToXml,
-        component: () =>
-          import('@/components/devtools/converters/JsonToXml.vue'),
-      },
-      {
-        path: 'hash',
-        name: RouterName.devtoolsHash,
-        component: () => import('@/components/devtools/crypto/Hash.vue'),
-      },
-      {
-        path: 'hmac',
-        name: RouterName.devtoolsHmac,
-        component: () => import('@/components/devtools/crypto/Hmac.vue'),
-      },
-      {
-        path: 'password',
-        name: RouterName.devtoolsPassword,
-        component: () => import('@/components/devtools/crypto/Password.vue'),
-      },
-      {
-        path: 'uuid',
-        name: RouterName.devtoolsUuid,
-        component: () => import('@/components/devtools/crypto/Uuid.vue'),
-      },
-      {
-        path: 'url-parser',
-        name: RouterName.devtoolsUrlParser,
-        component: () => import('@/components/devtools/web/UrlParser.vue'),
-      },
-      {
-        path: 'slugify',
-        name: RouterName.devtoolsSlugify,
-        component: () => import('@/components/devtools/web/Slugify.vue'),
-      },
-      {
-        path: 'url-encoder',
-        name: RouterName.devtoolsUrlEncoder,
-        component: () => import('@/components/devtools/web/UrlEncoder.vue'),
-      },
-      {
-        path: 'color-converter',
-        name: RouterName.devtoolsColorConverter,
-        component: () =>
-          import('@/components/devtools/converters/ColorConverter.vue'),
-      },
-      {
-        path: 'json-generator',
-        name: RouterName.devtoolsJsonGenerator,
-        component: () =>
-          import('@/components/devtools/generators/JsonGenerator.vue'),
-      },
-      {
-        path: 'lorem-ipsum-generator',
-        name: RouterName.devtoolsLoremIpsumGenerator,
-        component: () =>
-          import('@/components/devtools/generators/LoremIpsumGenerator.vue'),
-      },
-      {
-        path: 'compare/json-diff',
-        name: RouterName.devtoolsJsonDiff,
-        component: () => import('@/components/devtools/compare/JsonDiff.vue'),
-      },
-    ],
+    redirect: { name: RouterName.main },
   },
   {
     path: '/math-notebook',
     name: RouterName.mathNotebook,
-    component: () => import('@/views/MathNotebook.vue'),
+    redirect: { name: RouterName.main },
   },
   {
     path: '/notes',
     name: RouterName.notesSpace,
-    component: () => import('@/components/notes/NotesSpace.vue'),
+    redirect: { name: RouterName.main },
     children: [
       {
         path: 'dashboard',
         name: RouterName.notesDashboard,
-        component: () => import('@/views/NotesDashboard.vue'),
+        redirect: { name: RouterName.main },
       },
       {
         path: 'graph',
         name: RouterName.notesGraph,
-        component: () => import('@/views/NotesGraph.vue'),
+        redirect: { name: RouterName.main },
       },
     ],
   },
   {
     path: '/notes/presentation',
     name: RouterName.notesPresentation,
-    component: () => import('@/views/NotesPresentation.vue'),
+    redirect: { name: RouterName.main },
   },
 ]
 
