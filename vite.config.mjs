@@ -49,6 +49,7 @@ export default defineConfig({
         `${root}/scripts/**/*`,
         `${root}/build/**/*`,
         `${root}/src/main/**/*`,
+        `${root}/.claude/**/*`,
       ],
     },
   },
