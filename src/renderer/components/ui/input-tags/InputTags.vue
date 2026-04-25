@@ -62,8 +62,18 @@ function updateDropdownPosition() {
   })
 }
 
+function normalizeTagInput(raw: string) {
+  // Users often type `#foo` out of habit (matches how tags are displayed).
+  // Strip leading `#` characters and any whitespace around them so the
+  // stored tag name matches what the rest of the app expects.
+  return raw
+    .trim()
+    .replace(/^#+\s*/, '')
+    .trim()
+}
+
 function addTag() {
-  const value = inputValue.value.trim()
+  const value = normalizeTagInput(inputValue.value)
   if (
     value
     && !tags.value.some(tag => tag.name.toLowerCase() === value.toLowerCase())
@@ -204,14 +214,17 @@ function ensureSelectedSuggestionVisible() {
 }
 
 function updateFilteredSuggestions() {
-  if (inputValue.value) {
-    const lowerCaseInput = inputValue.value.toLowerCase()
+  // Match suggestions against the `#`-stripped input so typing `#f` still
+  // surfaces existing tags that start with `f`.
+  const normalized = normalizeTagInput(inputValue.value).toLowerCase()
+
+  if (normalized) {
     filteredSuggestions.value = props.suggestions
       .filter(
         suggestion => !tags.value.some(tag => tag.id === suggestion.id),
       )
       .filter(suggestion =>
-        suggestion.name.toLowerCase().includes(lowerCaseInput),
+        suggestion.name.toLowerCase().includes(normalized),
       )
 
     if (filteredSuggestions.value.length > 0) {
