@@ -174,206 +174,65 @@ export interface TagsAddResponse {
   id: number;
 }
 
-export interface NotesDashboardResponse {
-  stats: {
-    notesCount: number;
-    wordsCount: number;
-    foldersCount: number;
-    tagsCount: number;
-  };
-  activity: {
-    days: object;
-    notesUpdatedToday: number;
-    notesUpdatedLast7Days: number;
-  };
-  recent: {
-    id: number;
-    name: string;
-    folder: {
-      id: number;
-      name: string;
-    } | null;
-    updatedAt: number;
-  }[];
-  topLinked: {
-    id: number;
-    name: string;
-    incomingLinksCount: number;
-  }[];
-  graphPreview: {
-    nodes: {
-      id: number;
-      name: string;
-      folderId: number | null;
-      incomingLinksCount: number;
-    }[];
-    edges: {
-      source: number;
-      target: number;
-    }[];
-  };
-}
-
-export interface NotesGraphResponse {
-  nodes: {
-    id: number;
-    name: string;
-    folderId: number | null;
-    tagIds: number[];
-    incomingLinksCount: number;
-  }[];
-  edges: {
-    source: number;
-    target: number;
-  }[];
-}
-
-export interface NotesAdd {
+export interface AiIngestMcpRequest {
   name: string;
-  folderId?: number | null;
-}
-
-export interface NotesContentUpdate {
-  content: string;
-}
-
-export interface NotesCountsResponse {
-  total: number;
-  trash: number;
-}
-
-export interface NoteItemResponse {
-  id: number;
-  name: string;
-  description: string | null;
-  content: string;
-  tags: {
-    id: number;
-    name: string;
-  }[];
-  folder: {
-    id: number;
-    name: string;
-  } | null;
-  isFavorites: number;
-  isDeleted: number;
-  createdAt: number;
-  updatedAt: number;
-}
-
-export type NotesResponse = {
-  id: number;
-  name: string;
-  description: string | null;
-  content: string;
-  tags: {
-    id: number;
-    name: string;
-  }[];
-  folder: {
-    id: number;
-    name: string;
-  } | null;
-  isFavorites: number;
-  isDeleted: number;
-  createdAt: number;
-  updatedAt: number;
-}[];
-
-export interface NotesQuery {
-  search?: string;
-  sort?: string;
-  order?: "ASC" | "DESC";
-  folderId?: number;
-  tagId?: number;
-  /**
-   * @min 0
-   * @max 1
-   */
-  isFavorites?: number;
-  /**
-   * @min 0
-   * @max 1
-   */
-  isDeleted?: number;
-  /**
-   * @min 0
-   * @max 1
-   */
-  isInbox?: number;
-}
-
-export interface NotesUpdate {
-  name?: string;
   folderId?: number | null;
   description?: string | null;
+  tags?: string[];
+  /** @minItems 1 */
+  contents: {
+    label: string;
+    value: string;
+    language: string;
+  }[];
+}
+
+export interface AiIngestMcpResponse {
+  snippetId: number;
+  createdTagIds: number[];
+}
+
+export interface AiRagQueryRequest {
+  query: string;
   /**
-   * @min 0
-   * @max 1
+   * @min 1
+   * @max 50
    */
-  isDeleted?: number;
-  /**
-   * @min 0
-   * @max 1
-   */
-  isFavorites?: number;
+  limit?: number;
 }
 
-export interface NoteFoldersAdd {
-  name: string;
-  parentId?: number | null;
+export interface AiRagQueryResponse {
+  items: {
+    snippetId: number;
+    snippetName: string;
+    contentId: number;
+    language: string;
+    text: string;
+    score: number;
+  }[];
 }
 
-export type NoteFoldersResponse = {
-  id: number;
-  name: string;
-  createdAt: number;
-  updatedAt: number;
-  icon: string | null;
-  parentId: number | null;
-  isOpen: number;
-  orderIndex: number;
-}[];
-
-export type NoteFoldersTreeResponse = {
-  id: number;
-  name: string;
-  createdAt: number;
-  updatedAt: number;
-  icon: string | null;
-  parentId: number | null;
-  isOpen: number;
-  orderIndex: number;
-  children: any[];
-}[];
-
-export interface NoteFoldersUpdate {
-  name?: string;
-  icon?: string | null;
-  parentId?: number | null;
-  /**
-   * @min 0
-   * @max 1
-   */
-  isOpen?: number;
-  orderIndex?: number;
+export interface AiRagRebuildResponse {
+  indexed: number;
 }
 
-export interface NoteTagsAdd {
-  name: string;
+export interface AiRagStatusResponse {
+  chunks: number;
+  dbPath: string;
+  embeddingDim: number;
+  modelId: string;
 }
 
-export interface NoteTagsAddResponse {
-  id: number;
+export interface AiEmbeddingTestRequest {
+  provider: string;
+  endpoint: string;
+  model: string;
+  apiKey: string;
 }
 
-export type NoteTagsResponse = {
-  id: number;
-  name: string;
-}[];
-
-export interface NoteTagsUpdate {
-  name: string;
+export interface AiEmbeddingTestResponse {
+  ok: boolean;
+  status: number;
 }
 
 export type QueryParamsType = Record<string | number, any>;
@@ -622,7 +481,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title massCode API
- * @version 5.0.0
+ * @version 5.1.1
  *
  * Development documentation
  */
@@ -1039,92 +898,18 @@ export class Api<
         ...params,
       }),
   };
-  notes = {
+  ai = {
     /**
      * No description
      *
-     * @tags Notes Dashboard
-     * @name GetNotesDashboard
-     * @request GET:/notes/dashboard
+     * @tags AI
+     * @name PostAiMcpIngest
+     * @summary Ingest snippet generated by MCP workflow
+     * @request POST:/ai/mcp/ingest
      */
-    getNotesDashboard: (params: RequestParams = {}) =>
-      this.request<NotesDashboardResponse, any>({
-        path: `/notes/dashboard`,
-        method: "GET",
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Notes Dashboard
-     * @name GetNotesGraph
-     * @request GET:/notes/graph
-     */
-    getNotesGraph: (params: RequestParams = {}) =>
-      this.request<NotesGraphResponse, any>({
-        path: `/notes/graph`,
-        method: "GET",
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Notes
-     * @name GetNotes
-     * @request GET:/notes/
-     */
-    getNotes: (
-      query?: {
-        search?: string;
-        sort?: string;
-        order?: "ASC" | "DESC";
-        folderId?: number;
-        tagId?: number;
-        /**
-         * @min 0
-         * @max 1
-         */
-        isFavorites?: number;
-        /**
-         * @min 0
-         * @max 1
-         */
-        isDeleted?: number;
-        /**
-         * @min 0
-         * @max 1
-         */
-        isInbox?: number;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<NotesResponse, any>({
-        path: `/notes/`,
-        method: "GET",
-        query: query,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Notes
-     * @name PostNotes
-     * @request POST:/notes/
-     */
-    postNotes: (data: NotesAdd, params: RequestParams = {}) =>
-      this.request<
-        {
-          id: number | bigint;
-        },
-        any
-      >({
-        path: `/notes/`,
+    postAiMcpIngest: (data: AiIngestMcpRequest, params: RequestParams = {}) =>
+      this.request<AiIngestMcpResponse, any>({
+        path: `/ai/mcp/ingest`,
         method: "POST",
         body: data,
         type: ContentType.Json,
@@ -1135,154 +920,15 @@ export class Api<
     /**
      * No description
      *
-     * @tags Notes
-     * @name GetNotesCounts
-     * @request GET:/notes/counts
+     * @tags AI
+     * @name PostAiRagRebuild
+     * @summary Rebuild in-memory RAG index from snippets
+     * @request POST:/ai/rag/rebuild
      */
-    getNotesCounts: (params: RequestParams = {}) =>
-      this.request<NotesCountsResponse, any>({
-        path: `/notes/counts`,
-        method: "GET",
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Notes
-     * @name GetNotesById
-     * @request GET:/notes/{id}
-     */
-    getNotesById: (id: string, params: RequestParams = {}) =>
-      this.request<
-        NoteItemResponse,
-        {
-          message: string;
-        }
-      >({
-        path: `/notes/${id}`,
-        method: "GET",
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Notes
-     * @name PatchNotesById
-     * @request PATCH:/notes/{id}
-     */
-    patchNotesById: (
-      id: string,
-      data: NotesUpdate,
-      params: RequestParams = {},
-    ) =>
-      this.request<void, any>({
-        path: `/notes/${id}`,
-        method: "PATCH",
-        body: data,
-        type: ContentType.Json,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Notes
-     * @name DeleteNotesById
-     * @request DELETE:/notes/{id}
-     */
-    deleteNotesById: (id: string, params: RequestParams = {}) =>
-      this.request<void, any>({
-        path: `/notes/${id}`,
-        method: "DELETE",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Notes
-     * @name PatchNotesByIdContent
-     * @request PATCH:/notes/{id}/content
-     */
-    patchNotesByIdContent: (
-      id: string,
-      data: NotesContentUpdate,
-      params: RequestParams = {},
-    ) =>
-      this.request<void, any>({
-        path: `/notes/${id}/content`,
-        method: "PATCH",
-        body: data,
-        type: ContentType.Json,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Notes
-     * @name PostNotesByIdTagsByTagId
-     * @request POST:/notes/{id}/tags/{tagId}
-     */
-    postNotesByIdTagsByTagId: (
-      id: string,
-      tagId: string,
-      params: RequestParams = {},
-    ) =>
-      this.request<void, any>({
-        path: `/notes/${id}/tags/${tagId}`,
+    postAiRagRebuild: (params: RequestParams = {}) =>
+      this.request<AiRagRebuildResponse, any>({
+        path: `/ai/rag/rebuild`,
         method: "POST",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Notes
-     * @name DeleteNotesByIdTagsByTagId
-     * @request DELETE:/notes/{id}/tags/{tagId}
-     */
-    deleteNotesByIdTagsByTagId: (
-      id: string,
-      tagId: string,
-      params: RequestParams = {},
-    ) =>
-      this.request<void, any>({
-        path: `/notes/${id}/tags/${tagId}`,
-        method: "DELETE",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Notes
-     * @name DeleteNotesTrash
-     * @request DELETE:/notes/trash
-     */
-    deleteNotesTrash: (params: RequestParams = {}) =>
-      this.request<void, any>({
-        path: `/notes/trash`,
-        method: "DELETE",
-        ...params,
-      }),
-  };
-  noteFolders = {
-    /**
-     * No description
-     *
-     * @tags Note Folders
-     * @name GetNoteFolders
-     * @request GET:/note-folders/
-     */
-    getNoteFolders: (params: RequestParams = {}) =>
-      this.request<NoteFoldersResponse, any>({
-        path: `/note-folders/`,
-        method: "GET",
         format: "json",
         ...params,
       }),
@@ -1290,18 +936,14 @@ export class Api<
     /**
      * No description
      *
-     * @tags Note Folders
-     * @name PostNoteFolders
-     * @request POST:/note-folders/
+     * @tags AI
+     * @name PostAiRagQuery
+     * @summary Query snippets from in-memory RAG index
+     * @request POST:/ai/rag/query
      */
-    postNoteFolders: (data: NoteFoldersAdd, params: RequestParams = {}) =>
-      this.request<
-        {
-          id: number | bigint;
-        },
-        any
-      >({
-        path: `/note-folders/`,
+    postAiRagQuery: (data: AiRagQueryRequest, params: RequestParams = {}) =>
+      this.request<AiRagQueryResponse, any>({
+        path: `/ai/rag/query`,
         method: "POST",
         body: data,
         type: ContentType.Json,
@@ -1312,13 +954,14 @@ export class Api<
     /**
      * No description
      *
-     * @tags Note Folders
-     * @name GetNoteFoldersTree
-     * @request GET:/note-folders/tree
+     * @tags AI
+     * @name GetAiRagStatus
+     * @summary Inspect RAG index state (chunk count, db path, model)
+     * @request GET:/ai/rag/status
      */
-    getNoteFoldersTree: (params: RequestParams = {}) =>
-      this.request<NoteFoldersTreeResponse, any>({
-        path: `/note-folders/tree`,
+    getAiRagStatus: (params: RequestParams = {}) =>
+      this.request<AiRagStatusResponse, any>({
+        path: `/ai/rag/status`,
         method: "GET",
         format: "json",
         ...params,
@@ -1327,101 +970,21 @@ export class Api<
     /**
      * No description
      *
-     * @tags Note Folders
-     * @name PatchNoteFoldersById
-     * @request PATCH:/note-folders/{id}
+     * @tags AI
+     * @name PostAiEmbeddingTest
+     * @summary Test embedding endpoint connectivity
+     * @request POST:/ai/embedding/test
      */
-    patchNoteFoldersById: (
-      id: string,
-      data: NoteFoldersUpdate,
+    postAiEmbeddingTest: (
+      data: AiEmbeddingTestRequest,
       params: RequestParams = {},
     ) =>
-      this.request<void, any>({
-        path: `/note-folders/${id}`,
-        method: "PATCH",
-        body: data,
-        type: ContentType.Json,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Note Folders
-     * @name DeleteNoteFoldersById
-     * @request DELETE:/note-folders/{id}
-     */
-    deleteNoteFoldersById: (id: string, params: RequestParams = {}) =>
-      this.request<void, any>({
-        path: `/note-folders/${id}`,
-        method: "DELETE",
-        ...params,
-      }),
-  };
-  noteTags = {
-    /**
-     * No description
-     *
-     * @tags Note Tags
-     * @name GetNoteTags
-     * @request GET:/note-tags/
-     */
-    getNoteTags: (params: RequestParams = {}) =>
-      this.request<NoteTagsResponse, any>({
-        path: `/note-tags/`,
-        method: "GET",
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Note Tags
-     * @name PostNoteTags
-     * @request POST:/note-tags/
-     */
-    postNoteTags: (data: NoteTagsAdd, params: RequestParams = {}) =>
-      this.request<NoteTagsAddResponse, any>({
-        path: `/note-tags/`,
+      this.request<AiEmbeddingTestResponse, AiEmbeddingTestResponse>({
+        path: `/ai/embedding/test`,
         method: "POST",
         body: data,
         type: ContentType.Json,
         format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Note Tags
-     * @name PatchNoteTagsById
-     * @request PATCH:/note-tags/{id}
-     */
-    patchNoteTagsById: (
-      id: string,
-      data: NoteTagsUpdate,
-      params: RequestParams = {},
-    ) =>
-      this.request<void, any>({
-        path: `/note-tags/${id}`,
-        method: "PATCH",
-        body: data,
-        type: ContentType.Json,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Note Tags
-     * @name DeleteNoteTagsById
-     * @request DELETE:/note-tags/{id}
-     */
-    deleteNoteTagsById: (id: string, params: RequestParams = {}) =>
-      this.request<void, any>({
-        path: `/note-tags/${id}`,
-        method: "DELETE",
         ...params,
       }),
   };

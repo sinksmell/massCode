@@ -1,6 +1,8 @@
 import Elysia from 'elysia'
+import { EMBEDDING_DIM, MODEL_ID } from '../../ai/rag/embedder'
 import {
   clearRagIndex,
+  getRagIndexStatus,
   queryRagIndex,
   upsertSnippetInRagIndex,
 } from '../../ai/rag/index'
@@ -117,6 +119,26 @@ app
       detail: {
         tags: ['AI'],
         summary: 'Query snippets from in-memory RAG index',
+      },
+    },
+  )
+  .get(
+    '/rag/status',
+    () => {
+      const { chunks, dbPath } = getRagIndexStatus()
+
+      return {
+        chunks,
+        dbPath,
+        embeddingDim: EMBEDDING_DIM,
+        modelId: MODEL_ID,
+      }
+    },
+    {
+      response: 'aiRagStatusResponse',
+      detail: {
+        tags: ['AI'],
+        summary: 'Inspect RAG index state (chunk count, db path, model)',
       },
     },
   )

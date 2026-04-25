@@ -4,6 +4,8 @@ import { log } from '../../utils'
 import { embedText, embedTexts } from './embedder'
 import {
   clearAll,
+  countChunks,
+  getStoreDbPath,
   queryNearest,
   removeBySnippetId,
   upsertChunks,
@@ -24,6 +26,13 @@ function buildChunkText(snippetName: string, label: string, value: string) {
 
 export function clearRagIndex() {
   clearAll()
+}
+
+export function getRagIndexStatus() {
+  return {
+    chunks: countChunks(),
+    dbPath: getStoreDbPath(),
+  }
 }
 
 export async function upsertSnippetInRagIndex(snippet: SnippetRecord) {

@@ -3,7 +3,7 @@ import process from 'node:process'
 import { app as electronApp } from 'electron'
 import { importEsm } from '../../utils'
 
-const MODEL_ID = 'Xenova/bge-small-en-v1.5'
+export const MODEL_ID = 'Xenova/bge-small-en-v1.5'
 export const EMBEDDING_DIM = 384
 
 type FeatureExtractor = (

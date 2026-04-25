@@ -31,6 +31,10 @@ function getDbPath() {
   return path.join(electronApp.getPath('userData'), 'rag-index.db')
 }
 
+export function getStoreDbPath() {
+  return getDbPath()
+}
+
 function getDb(): DatabaseType {
   if (db) {
     return db
