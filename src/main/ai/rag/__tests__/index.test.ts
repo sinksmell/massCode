@@ -1,0 +1,151 @@
+import type { SnippetRecord } from '../../../storage/contracts'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+// Mock the embedder so tests run without loading the 30MB ONNX model.
+// The mock maps each known term to its own basis vector; cosine(a, b) = 1
+// when texts share a term, 0 otherwise.
+vi.mock('../embedder', () => {
+  const TERMS = ['alpha', 'beta', 'gamma', 'delta', 'epsilon']
+
+  function vectorize(text: string) {
+    const vec = new Float32Array(TERMS.length)
+    const lower = text.toLowerCase()
+    for (let i = 0; i < TERMS.length; i++) {
+      if (lower.includes(TERMS[i])) {
+        vec[i] = 1
+      }
+    }
+    // L2 normalize
+    const norm = Math.sqrt(vec.reduce((sum, v) => sum + v * v, 0)) || 1
+    for (let i = 0; i < vec.length; i++) {
+      vec[i] = vec[i] / norm
+    }
+    return vec
+  }
+
+  return {
+    EMBEDDING_DIM: TERMS.length,
+    cosineSimilarity: (a: Float32Array, b: Float32Array) => {
+      let sum = 0
+      for (let i = 0; i < a.length; i++) sum += a[i] * b[i]
+      return sum
+    },
+    embedText: async (text: string) => vectorize(text),
+    embedTexts: async (texts: string[]) => texts.map(vectorize),
+  }
+})
+
+// Import after mock is registered.
+const {
+  clearRagIndex,
+  queryRagIndex,
+  removeSnippetFromRagIndexBySnippetId,
+  syncSnippetInRagIndex,
+  upsertSnippetInRagIndex,
+} = await import('../index')
+
+function makeSnippet(
+  id: number,
+  name: string,
+  contents: Array<{ id: number, value: string }>,
+): SnippetRecord {
+  return {
+    contents: contents.map(c => ({
+      id: c.id,
+      label: 'main',
+      language: 'text',
+      value: c.value,
+    })),
+    createdAt: 0,
+    description: null,
+    folder: null,
+    id,
+    isDeleted: 0,
+    isFavorites: 0,
+    name,
+    tags: [],
+    updatedAt: 0,
+  }
+}
+
+describe('rag index', () => {
+  beforeEach(() => {
+    clearRagIndex()
+  })
+
+  it('ranks snippets by cosine similarity of the query embedding', async () => {
+    await upsertSnippetInRagIndex(
+      makeSnippet(1, 'alpha bravo', [{ id: 11, value: 'alpha content' }]),
+    )
+    await upsertSnippetInRagIndex(
+      makeSnippet(2, 'beta world', [{ id: 21, value: 'beta content' }]),
+    )
+
+    const results = await queryRagIndex('alpha', 5)
+
+    expect(results).toHaveLength(1)
+    expect(results[0].snippetId).toBe(1)
+    expect(results[0].score).toBeGreaterThan(0)
+  })
+
+  it('skips contents with empty or whitespace-only value', async () => {
+    await upsertSnippetInRagIndex(
+      makeSnippet(1, 'alpha', [
+        { id: 11, value: '   ' },
+        { id: 12, value: 'alpha and beta' },
+      ]),
+    )
+
+    const results = await queryRagIndex('alpha', 5)
+    expect(results).toHaveLength(1)
+    expect(results[0].contentId).toBe(12)
+  })
+
+  it('sync replaces all chunks for a snippet even when content ids change', async () => {
+    await upsertSnippetInRagIndex(
+      makeSnippet(1, 'first', [{ id: 11, value: 'alpha' }]),
+    )
+
+    // snippet now has a different content with a new id
+    await syncSnippetInRagIndex(
+      1,
+      makeSnippet(1, 'first', [{ id: 99, value: 'beta' }]),
+    )
+
+    const alphaHit = await queryRagIndex('alpha', 5)
+    const betaHit = await queryRagIndex('beta', 5)
+
+    expect(alphaHit).toHaveLength(0)
+    expect(betaHit).toHaveLength(1)
+    expect(betaHit[0].contentId).toBe(99)
+  })
+
+  it('removeSnippetFromRagIndexBySnippetId drops all chunks for the snippet', async () => {
+    await upsertSnippetInRagIndex(
+      makeSnippet(1, 'first', [
+        { id: 11, value: 'alpha' },
+        { id: 12, value: 'alpha and beta' },
+      ]),
+    )
+    await upsertSnippetInRagIndex(
+      makeSnippet(2, 'second', [{ id: 21, value: 'gamma' }]),
+    )
+
+    removeSnippetFromRagIndexBySnippetId(1)
+
+    const alphaHit = await queryRagIndex('alpha', 5)
+    const gammaHit = await queryRagIndex('gamma', 5)
+
+    expect(alphaHit).toHaveLength(0)
+    expect(gammaHit).toHaveLength(1)
+  })
+
+  it('returns empty array for empty query', async () => {
+    await upsertSnippetInRagIndex(
+      makeSnippet(1, 'x', [{ id: 11, value: 'alpha' }]),
+    )
+
+    expect(await queryRagIndex('', 5)).toEqual([])
+    expect(await queryRagIndex('   ', 5)).toEqual([])
+  })
+})

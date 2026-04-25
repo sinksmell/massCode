@@ -69,7 +69,7 @@ async function handleToolsCall(
 
     const snippet = storage.snippets.getSnippetById(snippetId)
     if (snippet) {
-      upsertSnippetInRagIndex(snippet)
+      await upsertSnippetInRagIndex(snippet)
     }
 
     return createResult(request.id, {
@@ -81,7 +81,7 @@ async function handleToolsCall(
   if (toolName === 'rag_query') {
     const query = String(args.query ?? '')
     const limit = Number(args.limit ?? 8)
-    const result = queryRagIndex(query, Number.isNaN(limit) ? 8 : limit)
+    const result = await queryRagIndex(query, Number.isNaN(limit) ? 8 : limit)
 
     return createResult(request.id, {
       content: [{ text: JSON.stringify({ items: result }), type: 'text' }],

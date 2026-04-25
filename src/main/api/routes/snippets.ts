@@ -20,7 +20,9 @@ const app = new Elysia({ prefix: '/snippets' })
 function syncRagForSnippet(snippetId: number) {
   const storage = useStorage()
   const snippet = storage.snippets.getSnippetById(snippetId)
-  syncSnippetInRagIndex(snippetId, snippet)
+  // Fire-and-forget: embedding generation is async but we don't want to
+  // block the HTTP response on model inference. Errors are logged inside.
+  void syncSnippetInRagIndex(snippetId, snippet)
 }
 
 function parseStorageError(

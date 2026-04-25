@@ -13,7 +13,7 @@ app
   .use(aiDTO)
   .post(
     '/mcp/ingest',
-    ({ body }) => {
+    async ({ body }) => {
       const storage = useStorage()
       const { id: snippetId } = storage.snippets.createSnippet({
         folderId: body.folderId ?? null,
@@ -61,7 +61,7 @@ app
 
       const snippet = storage.snippets.getSnippetById(snippetId)
       if (snippet) {
-        upsertSnippetInRagIndex(snippet)
+        await upsertSnippetInRagIndex(snippet)
       }
 
       return {
@@ -80,14 +80,14 @@ app
   )
   .post(
     '/rag/rebuild',
-    () => {
+    async () => {
       const storage = useStorage()
       const snippets = storage.snippets.getSnippets({})
 
       clearRagIndex()
 
       for (const snippet of snippets) {
-        upsertSnippetInRagIndex(snippet)
+        await upsertSnippetInRagIndex(snippet)
       }
 
       return {
@@ -104,8 +104,8 @@ app
   )
   .post(
     '/rag/query',
-    ({ body }) => {
-      const items = queryRagIndex(body.query, body.limit ?? 8)
+    async ({ body }) => {
+      const items = await queryRagIndex(body.query, body.limit ?? 8)
 
       return {
         items,
