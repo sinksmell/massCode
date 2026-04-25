@@ -2,6 +2,14 @@ import type { SnippetRecord } from '../../../storage/contracts'
 import type { RagStoreChunk, RagStoreMatch } from '../store'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+// `../../utils` pulls in `electron` at the top level (BrowserWindow). Under
+// vitest that resolves to the Electron binary launcher and blows up CI with
+// "Electron failed to install correctly". Stub `log` — that's all rag/index
+// actually consumes from utils.
+vi.mock('../../../utils', () => ({
+  log: () => {},
+}))
+
 // Mock the embedder so tests run without loading the 30MB ONNX model.
 // The mock maps each known term to its own basis vector; cosine(a, b) = 1
 // when texts share a term, 0 otherwise.
@@ -50,6 +58,7 @@ vi.mock('../store', () => {
   return {
     clearAll: () => chunks.clear(),
     countChunks: () => chunks.size,
+    getStoreDbPath: () => ':memory:',
     queryNearest: (query: Float32Array, limit: number): RagStoreMatch[] =>
       [...chunks.values()]
         .map(c => ({
