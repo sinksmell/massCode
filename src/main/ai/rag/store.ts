@@ -94,16 +94,20 @@ export function upsertChunks(chunks: RagStoreChunk[]) {
 
   const tx = instance.transaction((rows: RagStoreChunk[]) => {
     for (const row of rows) {
+      // vec0's primary key column is strict about SQLITE_INTEGER bindings.
+      // better-sqlite3 ships JS Number through sqlite3_bind_double, which
+      // vec0 rejects, so we go through BigInt to force an int64 binding.
+      const contentIdBig = BigInt(row.contentId)
       upsertMeta.run(
-        row.contentId,
+        contentIdBig,
         row.snippetId,
         row.snippetName,
         row.label,
         row.language,
         row.text,
       )
-      deleteVec.run(row.contentId)
-      insertVec.run(row.contentId, toBuffer(row.embedding))
+      deleteVec.run(contentIdBig)
+      insertVec.run(contentIdBig, toBuffer(row.embedding))
     }
   })
 
@@ -114,7 +118,7 @@ export function removeBySnippetId(snippetId: number) {
   const instance = getDb()
   const rows = instance
     .prepare(`SELECT content_id FROM rag_chunks WHERE snippet_id = ?`)
-    .all(snippetId) as { content_id: number }[]
+    .all(snippetId) as { content_id: number | bigint }[]
 
   if (!rows.length) {
     return
@@ -127,14 +131,14 @@ export function removeBySnippetId(snippetId: number) {
     `DELETE FROM rag_vec WHERE content_id = ?`,
   )
 
-  const tx = instance.transaction((ids: number[]) => {
+  const tx = instance.transaction((ids: bigint[]) => {
     for (const id of ids) {
       deleteMeta.run(id)
       deleteVec.run(id)
     }
   })
 
-  tx(rows.map(r => r.content_id))
+  tx(rows.map(r => BigInt(r.content_id)))
 }
 
 export function clearAll() {
@@ -178,19 +182,19 @@ export function queryNearest(
     `,
     )
     .all(toBuffer(query), limit) as Array<{
-    contentId: number
+    contentId: number | bigint
     distance: number
     language: string
-    snippetId: number
+    snippetId: number | bigint
     snippetName: string
     text: string
   }>
 
   return rows.map(row => ({
-    contentId: row.contentId,
+    contentId: Number(row.contentId),
     language: row.language,
     score: 1 - row.distance,
-    snippetId: row.snippetId,
+    snippetId: Number(row.snippetId),
     snippetName: row.snippetName,
     text: row.text,
   }))
