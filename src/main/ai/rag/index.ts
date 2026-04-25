@@ -56,6 +56,24 @@ export function removeSnippetFromRagIndex(contentIds: number[]) {
   }
 }
 
+export function removeSnippetFromRagIndexBySnippetId(snippetId: number) {
+  for (const [contentId, chunk] of ragChunkByContentId) {
+    if (chunk.snippetId === snippetId) {
+      ragChunkByContentId.delete(contentId)
+    }
+  }
+}
+
+export function syncSnippetInRagIndex(
+  snippetId: number,
+  snippet: SnippetRecord | null,
+) {
+  removeSnippetFromRagIndexBySnippetId(snippetId)
+  if (snippet) {
+    upsertSnippetInRagIndex(snippet)
+  }
+}
+
 export function queryRagIndex(query: string, limit: number) {
   const queryTokens = normalizeTokens(query)
 
