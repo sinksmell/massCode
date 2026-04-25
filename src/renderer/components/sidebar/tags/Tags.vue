@@ -7,6 +7,7 @@ import {
   useSnippets,
   useTags,
 } from '@/composables'
+import { LibraryFilter } from '@/composables/types'
 import { i18n } from '@/electron'
 
 const { tags, getTags, deleteTag } = useTags()
@@ -25,12 +26,24 @@ getTags()
 const idToDelete = ref(0)
 
 async function onTagClick(tagId: number) {
+  isRestoreStateBlocked.value = true
+  clearSearch()
+
+  // Clicking the currently-active tag toggles the filter off and falls
+  // back to the full library so the list doesn't end up empty.
+  if (state.tagId === tagId) {
+    state.tagId = undefined
+    clearFolderSelection()
+    state.libraryFilter = LibraryFilter.All
+
+    await getSnippets({ isDeleted: 0 })
+    selectFirstSnippet()
+    return
+  }
+
   state.tagId = tagId
   clearFolderSelection()
   state.libraryFilter = undefined
-
-  isRestoreStateBlocked.value = true
-  clearSearch()
 
   await getSnippets({ tagId })
   selectFirstSnippet()

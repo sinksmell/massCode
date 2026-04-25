@@ -152,6 +152,23 @@ async function getSnippets(query?: SnippetsQuery) {
   }
 }
 
+// Reactive safety net: whenever the effective query changes (library /
+// folder / tag / search switches), refetch from the single source of truth.
+// Individual click handlers still call getSnippets() eagerly for the fast
+// path; this catches any state mutation that forgot to refetch.
+let lastWatchedQuery: string | undefined
+watch(
+  () => JSON.stringify(queryByLibraryOrFolderOrSearch.value),
+  (next) => {
+    if (next === lastWatchedQuery) {
+      return
+    }
+    lastWatchedQuery = next
+    void getSnippets()
+  },
+  { flush: 'post' },
+)
+
 async function createSnippet() {
   try {
     const targetFolderId = state.folderId || null
