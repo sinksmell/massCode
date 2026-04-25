@@ -1,3 +1,5 @@
+import path from 'node:path'
+import process from 'node:process'
 import { app as electronApp } from 'electron'
 import { importEsm } from '../../utils'
 
@@ -11,17 +13,35 @@ type FeatureExtractor = (
 
 let extractorPromise: Promise<FeatureExtractor> | null = null
 
+function configureEnv(env: {
+  allowLocalModels?: boolean
+  allowRemoteModels?: boolean
+  cacheDir?: string
+  localModelPath?: string
+}) {
+  if (electronApp.isPackaged) {
+    // Use the model bundled via electron-builder extraResources. The prepare
+    // script lays files out under <resources>/models/Xenova/... so the repo id
+    // resolves directly against localModelPath.
+    env.localModelPath = path.join(process.resourcesPath, 'models')
+    env.allowLocalModels = true
+    env.allowRemoteModels = false
+  }
+  else {
+    try {
+      // Dev: cache under userData so repeated launches skip the download.
+      env.cacheDir = electronApp.getPath('userData')
+    }
+    catch {
+      // electronApp.getPath can throw if app isn't ready; fall back to default.
+    }
+  }
+}
+
 async function createExtractor(): Promise<FeatureExtractor> {
   const transformers = await importEsm('@huggingface/transformers')
 
-  // Cache model files under userData so repeated launches skip the download.
-  // env.cacheDir is honored by transformers.js for both ONNX models and tokenizers.
-  try {
-    transformers.env.cacheDir = electronApp.getPath('userData')
-  }
-  catch {
-    // electronApp.getPath can throw if app isn't ready; fall back to default.
-  }
+  configureEnv(transformers.env)
 
   return transformers.pipeline('feature-extraction', MODEL_ID, {
     // quantized weights keep the download ~30MB instead of ~100MB
