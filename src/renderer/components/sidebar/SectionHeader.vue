@@ -7,15 +7,12 @@ defineProps<Props>()
 </script>
 
 <template>
-  <div class="flex h-9 items-center justify-between py-1 pl-1 select-none">
-    <UiText
-      as="div"
-      variant="caption"
-      weight="bold"
-      uppercase
+  <div class="flex h-8 items-center justify-between py-1 pl-1 select-none">
+    <span
+      class="text-muted-foreground/80 font-display text-[12px] leading-none tracking-[0.02em] italic"
     >
       {{ title }}
-    </UiText>
+    </span>
     <slot name="action" />
   </div>
 </template>

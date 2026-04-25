@@ -9,6 +9,7 @@ import {
   useFolders,
   useResizeHandle,
   useSnippets,
+  useTags,
 } from '@/composables'
 import { LibraryFilter } from '@/composables/types'
 import { scrollToSnippetIndex } from '@/composables/useSnippetScroller'
@@ -19,6 +20,7 @@ import { LAYOUT_DEFAULTS } from '~/main/store/constants'
 
 const { state, isAppLoading, isCodeSpaceInitialized, pendingCodeNavigation }
   = useApp()
+const { tags } = useTags()
 const {
   getSnippets,
   selectFirstSnippet,
@@ -279,11 +281,26 @@ async function onFolderDrag({
       />
 
       <div
-        :style="{ height: `${tagsHeight}px` }"
-        class="shrink-0 overflow-hidden"
+        :style="{
+          'flex-basis': `${tagsHeight}px`,
+          'min-height': '44px',
+          'max-height': `${tagsHeight}px`,
+        }"
+        class="min-h-0 overflow-hidden"
       >
         <div class="flex h-full min-h-0 flex-col">
-          <SidebarSectionHeader :title="i18n.t('common.tags')" />
+          <SidebarSectionHeader :title="i18n.t('common.tags')">
+            <template
+              v-if="tags.length"
+              #action
+            >
+              <span
+                class="bg-primary-soft text-primary/85 border-primary/20 rounded-full border px-1.5 py-[3px] font-mono text-[10px] leading-none tracking-[0.04em] tabular-nums"
+              >
+                {{ tags.length }}
+              </span>
+            </template>
+          </SidebarSectionHeader>
 
           <div class="min-h-0 flex-1">
             <SidebarTags class="h-full px-1 pb-1" />

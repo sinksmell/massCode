@@ -12,17 +12,36 @@ const props = withDefaults(defineProps<Props>(), {
 
 <template>
   <div
-    class="from-background via-background to-muted/20 grid h-screen overflow-hidden bg-linear-to-br"
-    :class="props.showRail ? 'grid-cols-[72px_1fr]' : 'grid-cols-[1fr]'"
+    class="bg-canvas relative grid h-screen overflow-hidden"
+    :class="props.showRail ? 'grid-cols-[68px_1fr]' : 'grid-cols-[1fr]'"
   >
+    <!-- Atmospheric backdrop: warm paper with copper halo -->
+    <div
+      aria-hidden="true"
+      class="pointer-events-none absolute inset-0 z-0"
+      style="
+        background:
+          radial-gradient(
+            1100px 720px at 12% -15%,
+            oklch(from var(--primary) l c h / 0.09) 0%,
+            transparent 55%
+          ),
+          radial-gradient(
+            900px 600px at 110% 110%,
+            oklch(from var(--primary) l c h / 0.05) 0%,
+            transparent 60%
+          );
+      "
+    />
+
     <div
       v-if="props.showRail"
-      class="border-border/70 bg-background/65 border-r backdrop-blur-xl"
+      class="relative z-10 bg-transparent"
       :class="isMac && 'mt-2.5'"
     >
       <SpaceRail />
     </div>
-    <div class="min-h-0 min-w-0 overflow-hidden">
+    <div class="relative z-10 min-h-0 min-w-0 overflow-hidden">
       <slot />
     </div>
   </div>

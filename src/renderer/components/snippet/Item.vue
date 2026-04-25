@@ -70,17 +70,55 @@ const isTrashLibrarySelectd = computed(
   () => state.libraryFilter === LibraryFilter.Trash,
 )
 
-const folderName = computed(() => {
-  if (props.snippet.folder) {
-    return props.snippet.folder.name
-  }
-
-  if (props.snippet.isDeleted) {
-    return i18n.t('common.trash')
-  }
-
-  return i18n.t('common.inbox')
-})
+// Short aliases for language chips — keeps the list row compact and scannable.
+// Unknown languages fall back to the original value so we never surface an
+// empty pill.
+const LANGUAGE_ALIAS: Record<string, string> = {
+  typescript: 'js',
+  javascript: 'js',
+  golang: 'go',
+  python: 'py',
+  rust: 'rs',
+  ruby: 'rb',
+  kotlin: 'kt',
+  scala: 'sc',
+  swift: 'swift',
+  java: 'java',
+  c_cpp: 'cpp',
+  csharp: 'c#',
+  objectivec: 'objc',
+  powershell: 'ps',
+  shell: 'sh',
+  bash: 'sh',
+  zsh: 'sh',
+  sh: 'sh',
+  markdown: 'md',
+  yaml: 'yml',
+  html: 'html',
+  html_ruby: 'erb',
+  css: 'css',
+  scss: 'scss',
+  less: 'less',
+  json: 'json',
+  json5: 'json5',
+  toml: 'toml',
+  xml: 'xml',
+  sql: 'sql',
+  graphql: 'gql',
+  dockerfile: 'dock',
+  makefile: 'make',
+  vue: 'vue',
+  svelte: 'svelte',
+  elixir: 'ex',
+  erlang: 'erl',
+  haskell: 'hs',
+  lua: 'lua',
+  dart: 'dart',
+  perl: 'pl',
+  r: 'r',
+  clojure: 'clj',
+  php: 'php',
+}
 
 const primaryLanguage = computed(() => {
   // Show the language of the first fragment as a coarse summary. When a
@@ -90,7 +128,7 @@ const primaryLanguage = computed(() => {
   if (!lang || lang === 'plain_text') {
     return ''
   }
-  return lang
+  return LANGUAGE_ALIAS[lang] ?? lang
 })
 
 const snippetTags = computed(() => props.snippet.tags ?? [])
@@ -309,30 +347,29 @@ onClickOutside(snippetRef, () => {
             class="meta flex items-center justify-between gap-2 tracking-[0.01em]"
           >
             <span
-              class="folder-chip border-primary/20 bg-primary-soft text-primary/90 inline-flex max-w-[60%] items-center gap-1 truncate rounded-full border px-1.5 py-[1px] font-mono text-[10px] leading-none tracking-[0.02em]"
+              v-if="primaryLanguage"
+              class="lang-chip border-primary/25 bg-primary-soft text-primary/90 inline-flex max-w-[60%] items-center gap-1 truncate rounded-full border px-1.5 py-[2px] font-mono text-[10px] leading-none tracking-[0.06em] uppercase"
             >
               <span
                 class="bg-primary/80 inline-block h-[5px] w-[5px] shrink-0 rounded-full"
               />
-              <span class="truncate">{{ folderName }}</span>
+              <span class="truncate">{{ primaryLanguage }}</span>
             </span>
+            <span
+              v-else
+              aria-hidden="true"
+            />
             <div class="shrink-0 font-mono tabular-nums">
               {{ formatSnippetDate(snippet.createdAt) }}
             </div>
           </UiText>
           <UiText
-            v-if="!isCompactListMode && (primaryLanguage || snippetTags.length)"
+            v-if="!isCompactListMode && snippetTags.length"
             as="div"
             variant="xs"
             muted
             class="meta mt-1 flex min-w-0 flex-wrap items-center gap-1.5 tracking-[0.01em]"
           >
-            <span
-              v-if="primaryLanguage"
-              class="lang-chip bg-muted/60 text-muted-foreground/90 inline-flex items-center rounded-md px-1.5 py-[1px] font-mono text-[10px] leading-none"
-            >
-              {{ primaryLanguage }}
-            </span>
             <span
               v-for="tag in snippetTags"
               :key="tag.id"
@@ -444,7 +481,8 @@ onClickOutside(snippetRef, () => {
       .meta {
         @apply text-muted-foreground;
       }
-      .folder-chip {
+      .folder-chip,
+      .lang-chip {
         @apply bg-background/60 border-primary/40 text-primary;
       }
     }

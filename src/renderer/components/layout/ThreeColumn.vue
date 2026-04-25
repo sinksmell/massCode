@@ -77,23 +77,40 @@ const { isResizing: isListResizing } = useResizeHandle(listHandleRef, {
 const isResizing = computed(
   () => isSidebarResizing.value || isListResizing.value,
 )
+
+// ── Three floating rounded cards ───────────────────────────────────────────
+// Each column is its own rounded rectangle with a subtle border and inset
+// highlight. The canvas tint shows through the gap between cards, and the
+// resize handles live in that gap as invisible hit zones (copper pill shows
+// on hover). Inner content uses h-full + flex so it adapts to the card's
+// reduced height — no clipping.
+const wrapperClass = 'h-screen flex gap-1.5 p-2 pl-0'
+const cardBase
+  = 'bg-card/70 border-border/60 overflow-hidden rounded-xl border shadow-[0_1px_0_0_oklch(100%_0_0_/_0.35)_inset,0_6px_22px_-14px_oklch(22%_0.018_55_/_0.14)]'
+const sidebarCard = `${cardBase} shrink-0 bg-sidebar/75`
+const listCard = `${cardBase} shrink-0 bg-card/60`
+const editorCard = `${cardBase} min-w-0 flex-1`
+const handleClass
+  = 'before:bg-primary/0 hover:before:bg-primary/55 data-[resizing]:before:bg-primary relative z-10 flex w-1.5 shrink-0 cursor-col-resize items-center justify-center bg-transparent before:absolute before:top-1/2 before:left-1/2 before:h-10 before:w-[2px] before:-translate-x-1/2 before:-translate-y-1/2 before:rounded-full before:transition-[background-color,height] before:duration-200 before:content-[\'\'] after:absolute after:inset-y-0 after:left-1/2 after:w-3 after:-translate-x-1/2 after:content-[\'\'] hover:before:h-16 data-[resizing]:before:h-16'
 </script>
 
 <template>
   <div
     v-if="!showList && !showSidebar"
-    class="h-screen"
+    :class="wrapperClass"
   >
-    <slot name="editor" />
+    <div :class="editorCard">
+      <slot name="editor" />
+    </div>
   </div>
   <div
     v-else-if="!showList"
     ref="containerRef"
-    class="flex h-screen"
+    :class="wrapperClass"
   >
     <div
       :style="{ width: `${internalSidebarWidth}px` }"
-      class="shrink-0 overflow-hidden"
+      :class="sidebarCard"
     >
       <div
         class="h-full"
@@ -104,9 +121,9 @@ const isResizing = computed(
     </div>
     <div
       ref="sidebarHandleRef"
-      class="before:bg-border hover:before:bg-primary data-[resizing]:before:bg-primary relative z-10 flex w-px shrink-0 cursor-col-resize items-center justify-center bg-transparent before:absolute before:inset-y-0 before:left-1/2 before:w-px before:-translate-x-1/2 before:transition-[background-color,width] before:duration-150 before:content-[''] after:absolute after:inset-y-0 after:left-1/2 after:w-3 after:-translate-x-1/2 after:content-[''] hover:before:w-0.5 hover:before:delay-200 data-[resizing]:before:w-0.5"
+      :class="handleClass"
     />
-    <div class="min-w-0 flex-1 overflow-hidden">
+    <div :class="editorCard">
       <slot name="editor" />
     </div>
     <div
@@ -117,12 +134,12 @@ const isResizing = computed(
   <div
     v-else
     ref="containerRef"
-    class="flex h-screen"
+    :class="wrapperClass"
   >
     <div
       v-if="showSidebar"
       :style="{ width: `${internalSidebarWidth}px` }"
-      class="shrink-0 overflow-hidden"
+      :class="sidebarCard"
     >
       <div
         class="h-full"
@@ -134,19 +151,19 @@ const isResizing = computed(
     <div
       v-if="showSidebar"
       ref="sidebarHandleRef"
-      class="before:bg-border hover:before:bg-primary data-[resizing]:before:bg-primary relative z-10 flex w-px shrink-0 cursor-col-resize items-center justify-center bg-transparent before:absolute before:inset-y-0 before:left-1/2 before:w-px before:-translate-x-1/2 before:transition-[background-color,width] before:duration-150 before:content-[''] after:absolute after:inset-y-0 after:left-1/2 after:w-3 after:-translate-x-1/2 after:content-[''] hover:before:w-0.5 hover:before:delay-200 data-[resizing]:before:w-0.5"
+      :class="handleClass"
     />
     <div
       :style="{ width: `${internalListWidth}px` }"
-      class="shrink-0 overflow-hidden"
+      :class="listCard"
     >
       <slot name="list" />
     </div>
     <div
       ref="listHandleRef"
-      class="before:bg-border hover:before:bg-primary data-[resizing]:before:bg-primary relative z-10 flex w-px shrink-0 cursor-col-resize items-center justify-center bg-transparent before:absolute before:inset-y-0 before:left-1/2 before:w-px before:-translate-x-1/2 before:transition-[background-color,width] before:duration-150 before:content-[''] after:absolute after:inset-y-0 after:left-1/2 after:w-3 after:-translate-x-1/2 after:content-[''] hover:before:w-0.5 hover:before:delay-200 data-[resizing]:before:w-0.5"
+      :class="handleClass"
     />
-    <div class="min-w-0 flex-1 overflow-hidden">
+    <div :class="editorCard">
       <slot name="editor" />
     </div>
     <div

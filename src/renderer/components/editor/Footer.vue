@@ -75,17 +75,27 @@ watch(isOpen, async (open) => {
 <template>
   <div
     data-editor-footer
-    class="border-border flex items-center justify-between border-t px-2 py-1 text-xs"
+    class="border-border/70 bg-card/30 flex items-center justify-between border-t px-2 py-1 text-xs"
   >
     <div>
       <Popover.Popover v-model:open="isOpen">
         <Popover.PopoverTrigger as-child>
           <Button
             variant="ghost"
-            class="-ml-1"
-            :class="!selectedLanguageName && 'text-muted-foreground'"
+            class="group border-primary/20 bg-primary-soft text-primary/90 hover:bg-primary/15 hover:border-primary/35 hover:text-primary -ml-1 h-6 gap-1.5 rounded-full border px-2.5 py-0 text-[11px] font-medium tracking-[-0.003em]"
+            :class="
+              !selectedLanguageName
+                && 'border-border/60! text-muted-foreground! bg-transparent!'
+            "
           >
-            {{ selectedLanguageName || i18n.t("placeholder.selectLanguage") }}
+            <span
+              v-if="selectedLanguageName"
+              class="bg-primary/75 inline-block h-1.5 w-1.5 rounded-full transition-transform group-hover:scale-110"
+              aria-hidden="true"
+            />
+            <span class="font-mono">{{
+              selectedLanguageName || i18n.t("placeholder.selectLanguage")
+            }}</span>
           </Button>
         </Popover.PopoverTrigger>
         <Popover.PopoverContent class="w-auto px-1 py-0">
@@ -129,8 +139,14 @@ watch(isOpen, async (open) => {
         </Popover.PopoverContent>
       </Popover.Popover>
     </div>
-    <div class="mr-1">
-      Ln {{ cursorPosition.row + 1 }}, Col {{ cursorPosition.column + 1 }}
+    <div
+      class="text-muted-foreground/80 mr-1 flex items-center gap-2 font-mono text-[11px] tabular-nums"
+    >
+      <span class="text-muted-foreground/50">Ln</span>
+      <span class="text-foreground/75">{{ cursorPosition.row + 1 }}</span>
+      <span class="text-border">·</span>
+      <span class="text-muted-foreground/50">Col</span>
+      <span class="text-foreground/75">{{ cursorPosition.column + 1 }}</span>
     </div>
   </div>
 </template>
