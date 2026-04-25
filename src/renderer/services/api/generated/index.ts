@@ -223,18 +223,6 @@ export interface AiRagStatusResponse {
   modelId: string;
 }
 
-export interface AiEmbeddingTestRequest {
-  provider: string;
-  endpoint: string;
-  model: string;
-  apiKey: string;
-}
-
-export interface AiEmbeddingTestResponse {
-  ok: boolean;
-  status: number;
-}
-
 export type QueryParamsType = Record<string | number, any>;
 export type ResponseFormat = keyof Omit<Body, "body" | "bodyUsed">;
 
@@ -963,27 +951,6 @@ export class Api<
       this.request<AiRagStatusResponse, any>({
         path: `/ai/rag/status`,
         method: "GET",
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags AI
-     * @name PostAiEmbeddingTest
-     * @summary Test embedding endpoint connectivity
-     * @request POST:/ai/embedding/test
-     */
-    postAiEmbeddingTest: (
-      data: AiEmbeddingTestRequest,
-      params: RequestParams = {},
-    ) =>
-      this.request<AiEmbeddingTestResponse, AiEmbeddingTestResponse>({
-        path: `/ai/embedding/test`,
-        method: "POST",
-        body: data,
-        type: ContentType.Json,
         format: "json",
         ...params,
       }),

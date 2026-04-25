@@ -55,18 +55,6 @@ const aiRagStatusResponse = t.Object({
   modelId: t.String(),
 })
 
-const aiEmbeddingTestRequest = t.Object({
-  provider: t.String(),
-  endpoint: t.String(),
-  model: t.String(),
-  apiKey: t.String(),
-})
-
-const aiEmbeddingTestResponse = t.Object({
-  ok: t.Boolean(),
-  status: t.Number(),
-})
-
 export const aiDTO = new Elysia().model({
   aiIngestMcpRequest,
   aiIngestMcpResponse,
@@ -74,6 +62,4 @@ export const aiDTO = new Elysia().model({
   aiRagQueryResponse,
   aiRagRebuildResponse,
   aiRagStatusResponse,
-  aiEmbeddingTestRequest,
-  aiEmbeddingTestResponse,
 })
