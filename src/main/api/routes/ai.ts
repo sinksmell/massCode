@@ -1,3 +1,4 @@
+import type { UpsertOutcome } from '../../ai/rag/index'
 import Elysia from 'elysia'
 import { EMBEDDING_DIM, MODEL_ID } from '../../ai/rag/embedder'
 import {
@@ -86,21 +87,52 @@ app
       const storage = useStorage()
       const snippets = storage.snippets.getSnippets({})
 
+      const chunksBefore = getRagIndexStatus().chunks
       clearRagIndex()
 
+      let chunksWritten = 0
+      let skippedEmpty = 0
+      let embedErrors = 0
+      let storeErrors = 0
+      let firstError: string | undefined
+
+      const outcomes: UpsertOutcome[] = []
       for (const snippet of snippets) {
-        await upsertSnippetInRagIndex(snippet)
+        outcomes.push(await upsertSnippetInRagIndex(snippet))
+      }
+
+      for (const o of outcomes) {
+        chunksWritten += o.chunksWritten
+        if (o.reason === 'empty')
+          skippedEmpty += 1
+        if (o.reason === 'embed-error') {
+          embedErrors += 1
+          if (!firstError && o.error)
+            firstError = `embed: ${o.error}`
+        }
+        if (o.reason === 'store-error') {
+          storeErrors += 1
+          if (!firstError && o.error)
+            firstError = `store: ${o.error}`
+        }
       }
 
       return {
+        chunksAfter: getRagIndexStatus().chunks,
+        chunksBefore,
+        chunksWritten,
+        embedErrors,
+        firstError,
         indexed: snippets.length,
+        skippedEmpty,
+        storeErrors,
       }
     },
     {
       response: 'aiRagRebuildResponse',
       detail: {
         tags: ['AI'],
-        summary: 'Rebuild in-memory RAG index from snippets',
+        summary: 'Rebuild RAG index from snippets; reports per-stage counts',
       },
     },
   )

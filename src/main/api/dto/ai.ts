@@ -39,6 +39,13 @@ const aiRagQueryResponse = t.Object({
 
 const aiRagRebuildResponse = t.Object({
   indexed: t.Number(),
+  chunksBefore: t.Number(),
+  chunksAfter: t.Number(),
+  chunksWritten: t.Number(),
+  skippedEmpty: t.Number(),
+  embedErrors: t.Number(),
+  storeErrors: t.Number(),
+  firstError: t.Optional(t.String()),
 })
 
 const aiRagStatusResponse = t.Object({
