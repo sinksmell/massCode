@@ -134,6 +134,18 @@ const primaryLanguage = computed(() => {
 
 const snippetTags = computed(() => props.snippet.tags ?? [])
 
+// Keep the meta row a single line — show the first couple of tags inline
+// next to the language chip, and surface the rest through a "+N" counter.
+// A fixed cap is deterministic and avoids per-row width measurement; the
+// inner flex still shrinks gracefully if the list column is narrow.
+const MAX_VISIBLE_TAGS = 2
+const visibleTags = computed(() =>
+  snippetTags.value.slice(0, MAX_VISIBLE_TAGS),
+)
+const hiddenTagsCount = computed(() =>
+  Math.max(0, snippetTags.value.length - MAX_VISIBLE_TAGS),
+)
+
 function formatSnippetDate(date: number) {
   return format(new Date(date), 'yyyy-MM-dd HH:mm')
 }
@@ -354,40 +366,37 @@ onClickOutside(snippetRef, () => {
             muted
             class="meta flex items-center justify-between gap-2 tracking-[0.01em]"
           >
-            <span
-              v-if="primaryLanguage"
-              class="lang-chip border-primary/25 bg-primary-soft text-primary/90 inline-flex max-w-[60%] items-center gap-1 truncate rounded-full border px-1.5 py-[2px] font-mono text-[10px] leading-none tracking-[0.06em] uppercase"
-            >
+            <div class="flex min-w-0 flex-1 items-center gap-1.5">
               <span
-                class="bg-primary/80 inline-block h-[5px] w-[5px] shrink-0 rounded-full"
-              />
-              <span class="truncate">{{ primaryLanguage }}</span>
-            </span>
-            <span
-              v-else
-              aria-hidden="true"
-            />
+                v-if="primaryLanguage"
+                class="lang-chip border-primary/25 bg-primary-soft text-primary/90 inline-flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-[2px] font-mono text-[10px] leading-none tracking-[0.06em] uppercase"
+              >
+                <span
+                  class="bg-primary/80 inline-block h-[5px] w-[5px] shrink-0 rounded-full"
+                />
+                <span class="truncate">{{ primaryLanguage }}</span>
+              </span>
+              <button
+                v-for="tag in visibleTags"
+                :key="tag.id"
+                type="button"
+                :data-active="state.tagId === tag.id ? 'true' : undefined"
+                class="tag-chip bg-accent/50 text-foreground/70 hover:bg-primary-soft hover:text-primary data-[active=true]:bg-primary-soft data-[active=true]:text-primary inline-flex max-w-[90px] min-w-0 shrink cursor-pointer items-center truncate rounded-md px-1.5 py-[2px] font-mono text-[10px] leading-none transition-colors"
+                @click.stop="onTagChipClick(tag.id, $event)"
+              >
+                #{{ tag.name }}
+              </button>
+              <span
+                v-if="hiddenTagsCount > 0"
+                class="more-tags bg-muted/70 text-muted-foreground/90 inline-flex shrink-0 items-center rounded-md px-1.5 py-[2px] font-mono text-[10px] leading-none tabular-nums"
+                :title="snippetTags.map((t) => `#${t.name}`).join('  ')"
+              >
+                +{{ hiddenTagsCount }}
+              </span>
+            </div>
             <div class="shrink-0 font-mono tabular-nums">
               {{ formatSnippetDate(snippet.createdAt) }}
             </div>
-          </UiText>
-          <UiText
-            v-if="!isCompactListMode && snippetTags.length"
-            as="div"
-            variant="xs"
-            muted
-            class="meta mt-2 flex min-w-0 flex-wrap items-center gap-1.5 tracking-[0.01em]"
-          >
-            <button
-              v-for="tag in snippetTags"
-              :key="tag.id"
-              type="button"
-              :data-active="state.tagId === tag.id ? 'true' : undefined"
-              class="tag-chip bg-accent/40 text-foreground/70 hover:bg-primary-soft hover:text-primary data-[active=true]:bg-primary-soft data-[active=true]:text-primary inline-flex max-w-[120px] cursor-pointer items-center truncate rounded-md px-1.5 py-[1px] font-mono text-[10px] leading-none transition-colors"
-              @click.stop="onTagChipClick(tag.id, $event)"
-            >
-              #{{ tag.name }}
-            </button>
           </UiText>
         </div>
       </ContextMenu.ContextMenuTrigger>
@@ -519,6 +528,12 @@ onClickOutside(snippetRef, () => {
       .folder-chip,
       .lang-chip {
         @apply bg-background/60 border-primary/40 text-primary;
+      }
+      .tag-chip {
+        @apply bg-background/55 text-foreground/75;
+      }
+      .more-tags {
+        @apply bg-background/55 text-muted-foreground;
       }
     }
   }

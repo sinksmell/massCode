@@ -275,9 +275,16 @@ async function onFolderDrag({
         </div>
       </div>
 
+      <!--
+        Resize handle for the tags panel.
+        The visible hairline sits at the BOTTOM of the handle container, and
+        the grabbable hit area (6px) sits ABOVE that line — in the folder
+        tree's margin — so it never overlaps the tags section below it and
+        never silently eats clicks on tag rows near the top.
+      -->
       <div
         ref="tagsHandleRef"
-        class="before:bg-border hover:before:bg-primary data-[resizing]:before:bg-primary relative z-10 flex h-px shrink-0 cursor-row-resize items-center justify-center bg-transparent before:absolute before:inset-x-0 before:top-1/2 before:h-px before:-translate-y-1/2 before:transition-[background-color,height] before:duration-150 before:content-[''] after:absolute after:inset-x-0 after:top-1/2 after:h-3 after:-translate-y-1/2 after:content-[''] hover:before:h-0.5 hover:before:delay-200 data-[resizing]:before:h-0.5"
+        class="before:bg-border hover:before:bg-primary data-[resizing]:before:bg-primary relative z-10 flex h-1.5 shrink-0 cursor-row-resize bg-transparent before:absolute before:inset-x-0 before:bottom-0 before:h-px before:transition-[background-color,height] before:duration-150 before:content-[''] hover:before:h-0.5 hover:before:delay-200 data-[resizing]:before:h-0.5"
       />
 
       <div
@@ -286,7 +293,7 @@ async function onFolderDrag({
           'min-height': '44px',
           'max-height': `${tagsHeight}px`,
         }"
-        class="min-h-0 overflow-hidden"
+        class="relative z-[1] min-h-0 overflow-hidden"
       >
         <div class="flex h-full min-h-0 flex-col">
           <SidebarSectionHeader :title="i18n.t('common.tags')">

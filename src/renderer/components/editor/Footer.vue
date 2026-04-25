@@ -2,10 +2,15 @@
 import { Button } from '@/components/ui/shadcn/button'
 import * as Command from '@/components/ui/shadcn/command'
 import * as Popover from '@/components/ui/shadcn/popover'
-import { useEditor, useSnippets } from '@/composables'
+import { useApp, useEditor, useSnippets } from '@/composables'
 import { i18n } from '@/electron'
 import { Check } from 'lucide-vue-next'
 import { languages } from './grammars/languages'
+
+const { isShowCodeImage, isShowJsonVisualizer } = useApp()
+const isShowTags = computed(
+  () => !isShowCodeImage.value && !isShowJsonVisualizer.value,
+)
 
 const { cursorPosition } = useEditor()
 const { selectedSnippetContent, selectedSnippet, updateSnippetContent }
@@ -75,9 +80,9 @@ watch(isOpen, async (open) => {
 <template>
   <div
     data-editor-footer
-    class="border-border/70 bg-card/30 flex items-center justify-between border-t px-2 py-1 text-xs"
+    class="border-border/70 bg-card/30 flex items-center gap-2 border-t px-2 py-1 text-xs"
   >
-    <div>
+    <div class="shrink-0">
       <Popover.Popover v-model:open="isOpen">
         <Popover.PopoverTrigger as-child>
           <Button
@@ -139,8 +144,24 @@ watch(isOpen, async (open) => {
         </Popover.PopoverContent>
       </Popover.Popover>
     </div>
+    <!--
+      Inline tag editor — lives in the footer next to the language pill so
+      it shares real estate with other metadata, instead of stealing a full
+      row at the top of the editor card. Hidden in image/JSON visualizer
+      modes where tags don't apply.
+    -->
     <div
-      class="text-muted-foreground/80 mr-1 flex items-center gap-2 font-mono text-[11px] tabular-nums"
+      v-if="isShowTags"
+      class="footer-tags min-w-0 flex-1"
+    >
+      <EditorTags />
+    </div>
+    <div
+      v-else
+      class="flex-1"
+    />
+    <div
+      class="text-muted-foreground/80 mr-1 flex shrink-0 items-center gap-2 font-mono text-[11px] tabular-nums"
     >
       <span class="text-muted-foreground/50">Ln</span>
       <span class="text-foreground/75">{{ cursorPosition.row + 1 }}</span>
