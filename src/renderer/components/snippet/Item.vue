@@ -37,6 +37,7 @@ const {
   deleteSnippet,
   deleteSnippets,
   displayedSnippets,
+  applyTagFilter,
 } = useSnippets()
 const { clearHistory } = useNavigationHistory()
 
@@ -256,6 +257,13 @@ function onCopySnippetLink() {
   copy(`masscode://goto?snippetId=${props.snippet.id}`)
 }
 
+async function onTagChipClick(tagId: number, event: MouseEvent) {
+  // Stop the click from bubbling up to the row's @click handler, which
+  // would otherwise select the snippet at the same time.
+  event.stopPropagation()
+  await applyTagFilter(tagId)
+}
+
 function onDragStart(event: DragEvent) {
   const ids
     = selectedSnippetIds.value.length > 1
@@ -298,7 +306,7 @@ onClickOutside(snippetRef, () => {
   <div
     ref="snippetRef"
     data-snippet-item
-    class="border-border/50 relative border-b px-2 focus-visible:outline-none"
+    class="relative px-2 focus-visible:outline-none"
     :class="{
       'is-selected': isSelected,
       'is-multi-selected': isInMultiSelection,
@@ -316,8 +324,8 @@ onClickOutside(snippetRef, () => {
           class="relative rounded-lg border border-transparent transition-[background-color,border-color,color] duration-150 ease-out select-none"
           :class="
             isCompactListMode
-              ? 'flex items-center gap-2 px-3 py-2'
-              : 'flex flex-col px-3 py-2.5'
+              ? 'flex items-center gap-2 px-3 py-2.5'
+              : 'flex flex-col px-3 py-3'
           "
         >
           <div
@@ -325,7 +333,7 @@ onClickOutside(snippetRef, () => {
             :class="
               isCompactListMode
                 ? 'flex-1 text-[13.5px]'
-                : 'mb-1.5 text-[13.5px] font-medium'
+                : 'mb-2 text-[13.5px] font-medium'
             "
           >
             {{ snippet.name || i18n.t("snippet.untitled") }}
@@ -368,15 +376,18 @@ onClickOutside(snippetRef, () => {
             as="div"
             variant="xs"
             muted
-            class="meta mt-1 flex min-w-0 flex-wrap items-center gap-1.5 tracking-[0.01em]"
+            class="meta mt-2 flex min-w-0 flex-wrap items-center gap-1.5 tracking-[0.01em]"
           >
-            <span
+            <button
               v-for="tag in snippetTags"
               :key="tag.id"
-              class="tag-chip bg-accent/40 text-foreground/70 inline-flex max-w-[120px] items-center truncate rounded-md px-1.5 py-[1px] font-mono text-[10px] leading-none"
+              type="button"
+              :data-active="state.tagId === tag.id ? 'true' : undefined"
+              class="tag-chip bg-accent/40 text-foreground/70 hover:bg-primary-soft hover:text-primary data-[active=true]:bg-primary-soft data-[active=true]:text-primary inline-flex max-w-[120px] cursor-pointer items-center truncate rounded-md px-1.5 py-[1px] font-mono text-[10px] leading-none transition-colors"
+              @click.stop="onTagChipClick(tag.id, $event)"
             >
               #{{ tag.name }}
-            </span>
+            </button>
           </UiText>
         </div>
       </ContextMenu.ContextMenuTrigger>
@@ -422,6 +433,20 @@ onClickOutside(snippetRef, () => {
 <style lang="scss">
 @reference "../../styles.css";
 [data-snippet-item] {
+  /* Soft inset divider between items — sits with horizontal breathing room
+     so it never visually touches titles, chips, or tag rows above/below. */
+  &:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    left: 1rem;
+    right: 1rem;
+    bottom: 0;
+    height: 1px;
+    background: oklch(from var(--border) l c h / 0.55);
+    pointer-events: none;
+    transition: opacity 150ms ease;
+  }
+
   /* Accent stripe — appears on selected / focused states */
   &::before {
     content: "";
@@ -444,6 +469,16 @@ onClickOutside(snippetRef, () => {
 
     > [data-radix-menu-trigger] > div {
       @apply hover:border-border/40;
+    }
+  }
+
+  &.is-selected,
+  &.is-multi-selected,
+  &.is-focused {
+    /* Hide the inset divider on an active row — the card's own fill/border
+       already separates it from neighbors. */
+    &::after {
+      opacity: 0;
     }
   }
 

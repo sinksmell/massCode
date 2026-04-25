@@ -478,6 +478,32 @@ function selectSearchSnippet(index: number) {
   nextTick(() => scrollToSnippetIndex(index))
 }
 
+async function applyTagFilter(tagId: number) {
+  // Shared tag-filter side-effect. Used by both the sidebar tag list and
+  // tag chips rendered inside individual snippet rows. Re-clicking the
+  // active tag toggles the filter off and falls back to LibraryFilter.All
+  // so the list does not end up empty.
+  const { clearFolderSelection } = useFolders()
+
+  isRestoreStateBlocked.value = true
+  clearSearch()
+
+  if (state.tagId === tagId) {
+    state.tagId = undefined
+    clearFolderSelection()
+    state.libraryFilter = LibraryFilter.All
+    await getSnippets({ isDeleted: 0 })
+    selectFirstSnippet()
+    return
+  }
+
+  state.tagId = tagId
+  clearFolderSelection()
+  state.libraryFilter = undefined
+  await getSnippets({ tagId })
+  selectFirstSnippet()
+}
+
 function clearSearch(restoreState = false) {
   if (restoreState && !isRestoreStateBlocked.value) {
     restoreStateSnapshot('beforeSearch')
@@ -491,6 +517,7 @@ function clearSearch(restoreState = false) {
 export function useSnippets() {
   return {
     addTagToSnippet,
+    applyTagFilter,
     clearSearch,
     clearSnippets,
     clearSnippetsState,

@@ -1,52 +1,18 @@
 <script setup lang="ts">
 import * as ContextMenu from '@/components/ui/shadcn/context-menu'
-import {
-  useApp,
-  useDialog,
-  useFolders,
-  useSnippets,
-  useTags,
-} from '@/composables'
-import { LibraryFilter } from '@/composables/types'
+import { useApp, useDialog, useSnippets, useTags } from '@/composables'
 import { i18n } from '@/electron'
 
 const { tags, getTags, deleteTag } = useTags()
 const { highlightedTagId, state } = useApp()
-const {
-  getSnippets,
-  selectFirstSnippet,
-  clearSnippets,
-  clearSearch,
-  isRestoreStateBlocked,
-} = useSnippets()
-const { clearFolderSelection } = useFolders()
+const { applyTagFilter, getSnippets, clearSnippets } = useSnippets()
 
 getTags()
 
 const idToDelete = ref(0)
 
 async function onTagClick(tagId: number) {
-  isRestoreStateBlocked.value = true
-  clearSearch()
-
-  // Clicking the currently-active tag toggles the filter off and falls
-  // back to the full library so the list doesn't end up empty.
-  if (state.tagId === tagId) {
-    state.tagId = undefined
-    clearFolderSelection()
-    state.libraryFilter = LibraryFilter.All
-
-    await getSnippets({ isDeleted: 0 })
-    selectFirstSnippet()
-    return
-  }
-
-  state.tagId = tagId
-  clearFolderSelection()
-  state.libraryFilter = undefined
-
-  await getSnippets({ tagId })
-  selectFirstSnippet()
+  await applyTagFilter(tagId)
 }
 
 function onClickContextMenu(tagId: number) {
