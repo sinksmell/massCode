@@ -1,6 +1,13 @@
 import type { SnippetRecord } from '../../storage/contracts'
+import type { RagStoreChunk } from './store'
 import { log } from '../../utils'
-import { cosineSimilarity, embedText, embedTexts } from './embedder'
+import { embedText, embedTexts } from './embedder'
+import {
+  clearAll,
+  queryNearest,
+  removeBySnippetId,
+  upsertChunks,
+} from './store'
 
 export interface RagChunk {
   contentId: number
@@ -10,19 +17,13 @@ export interface RagChunk {
   text: string
 }
 
-interface IndexedChunk extends RagChunk {
-  embedding: Float32Array
-}
-
-const ragChunkByContentId = new Map<number, IndexedChunk>()
-
 function buildChunkText(snippetName: string, label: string, value: string) {
   // Prepend snippet context so chunks without much body text still match.
   return `${snippetName}\n${label}\n${value}`.trim()
 }
 
 export function clearRagIndex() {
-  ragChunkByContentId.clear()
+  clearAll()
 }
 
 export async function upsertSnippetInRagIndex(snippet: SnippetRecord) {
@@ -48,38 +49,28 @@ export async function upsertSnippetInRagIndex(snippet: SnippetRecord) {
     return
   }
 
-  for (let i = 0; i < contents.length; i++) {
-    const content = contents[i]
-    ragChunkByContentId.set(content.id, {
-      contentId: content.id,
-      embedding: embeddings[i],
-      language: content.language,
-      snippetId: snippet.id,
-      snippetName: snippet.name,
-      text: content.value,
-    })
-  }
-}
+  const rows: RagStoreChunk[] = contents.map((content, i) => ({
+    contentId: content.id,
+    embedding: embeddings[i],
+    label: content.label,
+    language: content.language,
+    snippetId: snippet.id,
+    snippetName: snippet.name,
+    text: content.value,
+  }))
 
-export function removeSnippetFromRagIndex(contentIds: number[]) {
-  for (const contentId of contentIds) {
-    ragChunkByContentId.delete(contentId)
-  }
+  upsertChunks(rows)
 }
 
 export function removeSnippetFromRagIndexBySnippetId(snippetId: number) {
-  for (const [contentId, chunk] of ragChunkByContentId) {
-    if (chunk.snippetId === snippetId) {
-      ragChunkByContentId.delete(contentId)
-    }
-  }
+  removeBySnippetId(snippetId)
 }
 
 export async function syncSnippetInRagIndex(
   snippetId: number,
   snippet: SnippetRecord | null,
 ) {
-  removeSnippetFromRagIndexBySnippetId(snippetId)
+  removeBySnippetId(snippetId)
   if (snippet) {
     await upsertSnippetInRagIndex(snippet)
   }
@@ -87,7 +78,7 @@ export async function syncSnippetInRagIndex(
 
 export async function queryRagIndex(query: string, limit: number) {
   const trimmed = query.trim()
-  if (!trimmed || !ragChunkByContentId.size) {
+  if (!trimmed) {
     return []
   }
 
@@ -100,16 +91,5 @@ export async function queryRagIndex(query: string, limit: number) {
     return []
   }
 
-  return [...ragChunkByContentId.values()]
-    .map(chunk => ({
-      contentId: chunk.contentId,
-      language: chunk.language,
-      score: cosineSimilarity(queryVec, chunk.embedding),
-      snippetId: chunk.snippetId,
-      snippetName: chunk.snippetName,
-      text: chunk.text,
-    }))
-    .filter(chunk => chunk.score > 0)
-    .sort((left, right) => right.score - left.score)
-    .slice(0, limit)
+  return queryNearest(queryVec, limit).filter(match => match.score > 0)
 }

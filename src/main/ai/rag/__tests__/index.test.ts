@@ -1,4 +1,5 @@
 import type { SnippetRecord } from '../../../storage/contracts'
+import type { RagStoreChunk, RagStoreMatch } from '../store'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock the embedder so tests run without loading the 30MB ONNX model.
@@ -35,7 +36,45 @@ vi.mock('../embedder', () => {
   }
 })
 
-// Import after mock is registered.
+// Mock the sqlite-vec store with an in-memory equivalent so tests don't need
+// the native extension loaded into a real better-sqlite3 database.
+vi.mock('../store', () => {
+  const chunks = new Map<number, RagStoreChunk>()
+
+  function cosine(a: Float32Array, b: Float32Array): number {
+    let sum = 0
+    for (let i = 0; i < a.length; i++) sum += a[i] * b[i]
+    return sum
+  }
+
+  return {
+    clearAll: () => chunks.clear(),
+    countChunks: () => chunks.size,
+    queryNearest: (query: Float32Array, limit: number): RagStoreMatch[] =>
+      [...chunks.values()]
+        .map(c => ({
+          contentId: c.contentId,
+          language: c.language,
+          score: cosine(query, c.embedding),
+          snippetId: c.snippetId,
+          snippetName: c.snippetName,
+          text: c.text,
+        }))
+        .sort((a, b) => b.score - a.score)
+        .slice(0, limit),
+    removeBySnippetId: (snippetId: number) => {
+      for (const [id, c] of chunks) {
+        if (c.snippetId === snippetId)
+          chunks.delete(id)
+      }
+    },
+    upsertChunks: (rows: RagStoreChunk[]) => {
+      for (const row of rows) chunks.set(row.contentId, row)
+    },
+  }
+})
+
+// Import after mocks are registered.
 const {
   clearRagIndex,
   queryRagIndex,
