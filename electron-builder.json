@@ -9,7 +9,21 @@
     "build/renderer/**/*",
     "build/main/**/*",
     "build/shared/**/*",
-    "!build/**/*.map"
+    "!build/**/*.map",
+    "!build/models/**/*"
+  ],
+  "extraResources": [
+    {
+      "from": "build/models",
+      "to": "models",
+      "filter": ["**/*"]
+    }
+  ],
+  "asarUnpack": [
+    "node_modules/better-sqlite3/**/*",
+    "node_modules/sqlite-vec/**/*",
+    "node_modules/sqlite-vec-*/**/*",
+    "node_modules/onnxruntime-node/**/*"
   ],
   "mac": {
     "target": "dmg",

@@ -4,6 +4,10 @@ import type {
   SnippetsResponse,
 } from '../dto/snippets'
 import Elysia from 'elysia'
+import {
+  removeSnippetFromRagIndexBySnippetId,
+  syncSnippetInRagIndex,
+} from '../../ai/rag/index'
 import { useStorage } from '../../storage'
 import {
   commonAddResponse,
@@ -12,6 +16,14 @@ import {
 import { snippetsDTO } from '../dto/snippets'
 
 const app = new Elysia({ prefix: '/snippets' })
+
+function syncRagForSnippet(snippetId: number) {
+  const storage = useStorage()
+  const snippet = storage.snippets.getSnippetById(snippetId)
+  // Fire-and-forget: embedding generation is async but we don't want to
+  // block the HTTP response on model inference. Errors are logged inside.
+  void syncSnippetInRagIndex(snippetId, snippet)
+}
 
 function parseStorageError(
   error: unknown,
@@ -128,6 +140,8 @@ app
       try {
         const { id } = storage.snippets.createSnippet(body)
 
+        syncRagForSnippet(id)
+
         return { id }
       }
       catch (error) {
@@ -152,6 +166,8 @@ app
           Number(params.id),
           body,
         )
+
+        syncRagForSnippet(Number(params.id))
 
         return { id }
       }
@@ -185,6 +201,8 @@ app
         if (notFound) {
           return status(404, { message: 'Snippet not found' })
         }
+
+        syncRagForSnippet(Number(params.id))
 
         return { message: 'Snippet updated' }
       }
@@ -222,6 +240,8 @@ app
       if (parentNotFound) {
         return status(404, { message: 'Snippet not found' })
       }
+
+      syncRagForSnippet(Number(params.id))
 
       return { message: 'Snippet content updated' }
     },
@@ -296,11 +316,14 @@ app
     '/:id',
     ({ params, status }) => {
       const storage = useStorage()
-      const { deleted } = storage.snippets.deleteSnippet(Number(params.id))
+      const snippetId = Number(params.id)
+      const { deleted } = storage.snippets.deleteSnippet(snippetId)
 
       if (!deleted) {
         return status(404, { message: 'Snippet not found' })
       }
+
+      removeSnippetFromRagIndexBySnippetId(snippetId)
 
       return { message: 'Snippet deleted' }
     },
@@ -315,10 +338,15 @@ app
     '/trash',
     ({ status }) => {
       const storage = useStorage()
+      const trashed = storage.snippets.getSnippets({ isDeleted: 1 })
       const { deletedCount } = storage.snippets.emptyTrash()
 
       if (!deletedCount) {
         return status(404, { message: 'No snippets in trash' })
+      }
+
+      for (const snippet of trashed) {
+        removeSnippetFromRagIndexBySnippetId(snippet.id)
       }
 
       return {
@@ -343,6 +371,8 @@ app
       if (!deleted) {
         return status(404, { message: 'Snippet content not found' })
       }
+
+      syncRagForSnippet(Number(params.id))
 
       return { message: 'Snippet content deleted' }
     },

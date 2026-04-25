@@ -120,10 +120,6 @@ const isShowJsonVisualizerAction = computed(
   () => selectedSnippetContent.value?.language === 'json',
 )
 
-const isShowTags = computed(() => {
-  return !isShowCodeImage.value && !isShowJsonVisualizer.value
-})
-
 const isHistoryVisible = computed(() => canGoBack.value || canGoForward.value)
 
 function onClickTab(index: number) {
@@ -276,11 +272,5 @@ function onJsonVisualizerToggle() {
       />
     </div>
     <EditorDescription v-model:show="isShowDescription" />
-    <div
-      v-if="isShowTags"
-      class="pt-1"
-    >
-      <EditorHeaderTags />
-    </div>
   </div>
 </template>

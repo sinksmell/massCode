@@ -69,7 +69,7 @@ async function handleToolsCall(
 
     const snippet = storage.snippets.getSnippetById(snippetId)
     if (snippet) {
-      upsertSnippetInRagIndex(snippet)
+      await upsertSnippetInRagIndex(snippet)
     }
 
     return createResult(request.id, {
@@ -81,7 +81,7 @@ async function handleToolsCall(
   if (toolName === 'rag_query') {
     const query = String(args.query ?? '')
     const limit = Number(args.limit ?? 8)
-    const result = queryRagIndex(query, Number.isNaN(limit) ? 8 : limit)
+    const result = await queryRagIndex(query, Number.isNaN(limit) ? 8 : limit)
 
     return createResult(request.id, {
       content: [{ text: JSON.stringify({ items: result }), type: 'text' }],
@@ -98,11 +98,17 @@ export async function initMcpApi() {
   const app = new Elysia({ adapter: node() })
 
   app
-    .post('/', async ({ body }) => {
+    .post('/', async ({ body, status }) => {
       const request = (body ?? {}) as JsonRpcRequest
 
       if (!request.method) {
         return createError(request.id, -32600, 'Invalid request')
+      }
+
+      // JSON-RPC notifications have no id and expect no response.
+      // The MCP spec sends `notifications/initialized` after `initialize`.
+      if (request.method.startsWith('notifications/')) {
+        return status(204, null)
       }
 
       if (request.method === 'initialize') {

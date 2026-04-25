@@ -1,6 +1,9 @@
+import type { UpsertOutcome } from '../../ai/rag/index'
 import Elysia from 'elysia'
+import { EMBEDDING_DIM, MODEL_ID } from '../../ai/rag/embedder'
 import {
   clearRagIndex,
+  getRagIndexStatus,
   queryRagIndex,
   upsertSnippetInRagIndex,
 } from '../../ai/rag/index'
@@ -13,7 +16,7 @@ app
   .use(aiDTO)
   .post(
     '/mcp/ingest',
-    ({ body }) => {
+    async ({ body }) => {
       const storage = useStorage()
       const { id: snippetId } = storage.snippets.createSnippet({
         folderId: body.folderId ?? null,
@@ -61,7 +64,7 @@ app
 
       const snippet = storage.snippets.getSnippetById(snippetId)
       if (snippet) {
-        upsertSnippetInRagIndex(snippet)
+        await upsertSnippetInRagIndex(snippet)
       }
 
       return {
@@ -80,32 +83,63 @@ app
   )
   .post(
     '/rag/rebuild',
-    () => {
+    async () => {
       const storage = useStorage()
       const snippets = storage.snippets.getSnippets({})
 
+      const chunksBefore = getRagIndexStatus().chunks
       clearRagIndex()
 
+      let chunksWritten = 0
+      let skippedEmpty = 0
+      let embedErrors = 0
+      let storeErrors = 0
+      let firstError: string | undefined
+
+      const outcomes: UpsertOutcome[] = []
       for (const snippet of snippets) {
-        upsertSnippetInRagIndex(snippet)
+        outcomes.push(await upsertSnippetInRagIndex(snippet))
+      }
+
+      for (const o of outcomes) {
+        chunksWritten += o.chunksWritten
+        if (o.reason === 'empty')
+          skippedEmpty += 1
+        if (o.reason === 'embed-error') {
+          embedErrors += 1
+          if (!firstError && o.error)
+            firstError = `embed: ${o.error}`
+        }
+        if (o.reason === 'store-error') {
+          storeErrors += 1
+          if (!firstError && o.error)
+            firstError = `store: ${o.error}`
+        }
       }
 
       return {
+        chunksAfter: getRagIndexStatus().chunks,
+        chunksBefore,
+        chunksWritten,
+        embedErrors,
+        firstError,
         indexed: snippets.length,
+        skippedEmpty,
+        storeErrors,
       }
     },
     {
       response: 'aiRagRebuildResponse',
       detail: {
         tags: ['AI'],
-        summary: 'Rebuild in-memory RAG index from snippets',
+        summary: 'Rebuild RAG index from snippets; reports per-stage counts',
       },
     },
   )
   .post(
     '/rag/query',
-    ({ body }) => {
-      const items = queryRagIndex(body.query, body.limit ?? 8)
+    async ({ body }) => {
+      const items = await queryRagIndex(body.query, body.limit ?? 8)
 
       return {
         items,
@@ -120,52 +154,23 @@ app
       },
     },
   )
-  .post(
-    '/embedding/test',
-    async ({ body, status }) => {
-      try {
-        const response = await fetch(body.endpoint, {
-          method: 'POST',
-          headers: {
-            'Authorization': body.apiKey ? `Bearer ${body.apiKey}` : '',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            input: ['connectivity-check'],
-            model: body.model,
-          }),
-        })
+  .get(
+    '/rag/status',
+    () => {
+      const { chunks, dbPath } = getRagIndexStatus()
 
-        if (!response.ok) {
-          return status(400, {
-            ok: false,
-            status: response.status,
-          })
-        }
-
-        return {
-          ok: true,
-          status: response.status,
-        }
-      }
-      catch (error) {
-        console.error('Embedding endpoint test failed:', error)
-        return status(500, {
-          ok: false,
-          status: 500,
-        })
+      return {
+        chunks,
+        dbPath,
+        embeddingDim: EMBEDDING_DIM,
+        modelId: MODEL_ID,
       }
     },
     {
-      body: 'aiEmbeddingTestRequest',
-      response: {
-        200: 'aiEmbeddingTestResponse',
-        400: 'aiEmbeddingTestResponse',
-        500: 'aiEmbeddingTestResponse',
-      },
+      response: 'aiRagStatusResponse',
       detail: {
         tags: ['AI'],
-        summary: 'Test embedding endpoint connectivity',
+        summary: 'Inspect RAG index state (chunk count, db path, model)',
       },
     },
   )

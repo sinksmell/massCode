@@ -310,9 +310,19 @@ function getFolderByIdFromTree(
   }
 }
 
+// Last-write-wins guard so overlapping calls (e.g. initCodeSpace and a
+// storage-sync refresh racing on boot) don't let an older response clobber a
+// newer one, which was causing the tree to intermittently stay empty.
+let getFoldersSeq = 0
+
 async function getFolders(shouldEnsureVisibility = true) {
+  const seq = ++getFoldersSeq
   try {
     const { data } = await api.folders.getFoldersTree()
+    // A newer call has started — drop this response.
+    if (seq !== getFoldersSeq) {
+      return
+    }
     folders.value = data
     syncSelectedFoldersWithTree()
 
@@ -322,6 +332,11 @@ async function getFolders(shouldEnsureVisibility = true) {
   }
   catch (error) {
     console.error(error)
+    // Fall back to an empty tree so the UI can render the "no folders"
+    // placeholder instead of showing nothing forever.
+    if (seq === getFoldersSeq && folders.value === undefined) {
+      folders.value = []
+    }
   }
 }
 

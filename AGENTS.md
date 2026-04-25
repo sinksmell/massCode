@@ -1,3 +1,7 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 # massCode AI Coding Guidelines
 
 You are an expert Senior Frontend Developer specializing in Electron, Vue 3, and TypeScript.
@@ -11,6 +15,16 @@ Follow these rules strictly when generating code for massCode.
 - **State:** Vue Composables (No Vuex/Pinia)
 - **Backend:** Electron (Main), `better-sqlite3` (DB), Elysia.js (API)
 - **Utilities:** `@vueuse/core`, `vue-sonner` (Notifications)
+
+**Path Aliases:**
+- `@` → `src/renderer` (renderer code)
+- `~` → `src` (any source code, including main/shared)
+
+**Dual TypeScript Configs:**
+- `tsconfig.json` — Renderer process (Vue/Vite, ESNext modules)
+- `tsconfig.main.json` — Main process + shared (CommonJS, compiled to `build/`)
+
+**Node Version:** Pinned via Volta (`node 24.14.1`). Use `pnpm` (>=10) as the package manager.
 
 ## 2. Philosophy
 
@@ -74,6 +88,20 @@ Composables get a `use` prefix. The file name matches the exported function name
   1. Define DTO in `src/main/api/dto/`
   2. Add route in `src/main/api/routes/`
   3. **Run `pnpm api:generate`** to update client.
+- **Generated API Client:** `src/renderer/services/api/generated/` — auto-generated, never edit manually. Excluded from ESLint.
+
+**Storage Engine Architecture:**
+
+The app supports two storage backends, selectable by the user:
+
+| Engine | Provider | Location |
+|--------|----------|----------|
+| `sqlite` | `better-sqlite3` via `src/main/db/` | Single `.db` file |
+| `markdown` | File-based in `src/main/storage/providers/markdown/` | Vault directory with `.md` files, YAML frontmatter, `state.json` |
+
+Both implement the `StorageProvider` / `NotesStorageProvider` interfaces from `src/main/storage/contracts.ts`. The markdown provider includes a file watcher (`watcher.ts`) for external sync and migration support (`migrations.ts`).
+
+API routes are storage-engine agnostic — they call the active provider through `src/main/storage/index.ts`.
 
 ### D. System & IPC
 
@@ -114,7 +142,12 @@ massCode uses a **Spaces** system to organize different functional areas:
   - `tools` → no-op (no vault data)
 - Mutable operations must call `markPersistedStorageMutation()` to prevent sync loops.
 
-### F. Localization
+### F. AI & MCP Server
+
+- **AI features:** `src/main/ai/` — RAG-based features using `src/main/storage/providers/rag/`.
+- **MCP Server:** `src/main/api/mcp.ts` — Model Context Protocol server endpoint, runs alongside the Elysia REST API on a dedicated port.
+
+### G. Localization
 
 - **Primary Language:** English (EN) is the base language. All new keys **MUST** be added to `src/main/i18n/locales/en_US/` first.
 - **Strictly No Hardcoding:** Never use hardcoded strings in templates or logic. Always use the localization system.
@@ -165,18 +198,29 @@ Keep no logic in `<template>` more complex than a ternary operator.
 - **ALWAYS** scope lint commands to specific files/dirs.
 - **NEVER** run lint on the whole project during a task.
 - Usage: `pnpm lint <path>` or `pnpm lint:fix <path>`
+- ESLint uses `@antfu/eslint-config`. Single-attribute-per-line enforced for Vue templates.
 
 **Testing:**
 
 - **ALWAYS** scope test commands to specific files/dirs when working on a feature.
 - **NEVER** run tests on the whole project during a task.
 - Usage: `pnpm test <path>` or `pnpm test:watch <path>`
+- Test framework: Vitest with `globals: true` — `describe`, `it`, `expect` are auto-imported.
+- Test files live in `__tests__/` directories adjacent to source or as `*.test.ts` files.
+
+**Commit Conventions:**
+
+- Conventional Commits enforced by `commitlint` (`@commitlint/config-conventional`).
+- Pre-commit hook runs `prettier --write` + `eslint --fix` on staged `*.{js,ts,vue}` files via `lint-staged`.
 
 **Other Commands:**
 
-- `pnpm dev`: Start dev server
+- `pnpm dev`: Start dev server (renderer Vite on port 5177 + main process via nodemon + electronmon)
 - `pnpm api:generate`: Regenerate API client (required after API changes)
+- `pnpm i18n:copy`: Sync locale files (required after adding/changing locales)
+- `pnpm i18n:check`: Verify locale parity across languages
 - `pnpm build`: Build for production
+- `pnpm build:main`: Build main process only (runs `i18n:copy` + `tsc -p tsconfig.main.json`)
 
 ## 9. Code Examples
 

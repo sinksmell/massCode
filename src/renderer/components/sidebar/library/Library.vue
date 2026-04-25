@@ -9,6 +9,7 @@ import {
   useFolders,
   useResizeHandle,
   useSnippets,
+  useTags,
 } from '@/composables'
 import { LibraryFilter } from '@/composables/types'
 import { scrollToSnippetIndex } from '@/composables/useSnippetScroller'
@@ -19,6 +20,7 @@ import { LAYOUT_DEFAULTS } from '~/main/store/constants'
 
 const { state, isAppLoading, isCodeSpaceInitialized, pendingCodeNavigation }
   = useApp()
+const { tags } = useTags()
 const {
   getSnippets,
   selectFirstSnippet,
@@ -273,17 +275,39 @@ async function onFolderDrag({
         </div>
       </div>
 
+      <!--
+        Resize handle for the tags panel.
+        The visible hairline sits at the BOTTOM of the handle container, and
+        the grabbable hit area (6px) sits ABOVE that line — in the folder
+        tree's margin — so it never overlaps the tags section below it and
+        never silently eats clicks on tag rows near the top.
+      -->
       <div
         ref="tagsHandleRef"
-        class="before:bg-border hover:before:bg-primary data-[resizing]:before:bg-primary relative z-10 flex h-px shrink-0 cursor-row-resize items-center justify-center bg-transparent before:absolute before:inset-x-0 before:top-1/2 before:h-px before:-translate-y-1/2 before:transition-[background-color,height] before:duration-150 before:content-[''] after:absolute after:inset-x-0 after:top-1/2 after:h-3 after:-translate-y-1/2 after:content-[''] hover:before:h-0.5 hover:before:delay-200 data-[resizing]:before:h-0.5"
+        class="before:bg-border hover:before:bg-primary data-[resizing]:before:bg-primary relative z-10 flex h-1.5 shrink-0 cursor-row-resize bg-transparent before:absolute before:inset-x-0 before:bottom-0 before:h-px before:transition-[background-color,height] before:duration-150 before:content-[''] hover:before:h-0.5 hover:before:delay-200 data-[resizing]:before:h-0.5"
       />
 
       <div
-        :style="{ height: `${tagsHeight}px` }"
-        class="shrink-0 overflow-hidden"
+        :style="{
+          'flex-basis': `${tagsHeight}px`,
+          'min-height': '44px',
+          'max-height': `${tagsHeight}px`,
+        }"
+        class="relative z-[1] min-h-0 overflow-hidden"
       >
         <div class="flex h-full min-h-0 flex-col">
-          <SidebarSectionHeader :title="i18n.t('common.tags')" />
+          <SidebarSectionHeader :title="i18n.t('common.tags')">
+            <template
+              v-if="tags.length"
+              #action
+            >
+              <span
+                class="bg-primary-soft text-primary/85 border-primary/20 rounded-full border px-1.5 py-[3px] font-mono text-[10px] leading-none tracking-[0.04em] tabular-nums"
+              >
+                {{ tags.length }}
+              </span>
+            </template>
+          </SidebarSectionHeader>
 
           <div class="min-h-0 flex-1">
             <SidebarTags class="h-full px-1 pb-1" />

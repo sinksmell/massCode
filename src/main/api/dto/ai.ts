@@ -39,18 +39,20 @@ const aiRagQueryResponse = t.Object({
 
 const aiRagRebuildResponse = t.Object({
   indexed: t.Number(),
+  chunksBefore: t.Number(),
+  chunksAfter: t.Number(),
+  chunksWritten: t.Number(),
+  skippedEmpty: t.Number(),
+  embedErrors: t.Number(),
+  storeErrors: t.Number(),
+  firstError: t.Optional(t.String()),
 })
 
-const aiEmbeddingTestRequest = t.Object({
-  provider: t.String(),
-  endpoint: t.String(),
-  model: t.String(),
-  apiKey: t.String(),
-})
-
-const aiEmbeddingTestResponse = t.Object({
-  ok: t.Boolean(),
-  status: t.Number(),
+const aiRagStatusResponse = t.Object({
+  chunks: t.Number(),
+  dbPath: t.String(),
+  embeddingDim: t.Number(),
+  modelId: t.String(),
 })
 
 export const aiDTO = new Elysia().model({
@@ -59,6 +61,5 @@ export const aiDTO = new Elysia().model({
   aiRagQueryRequest,
   aiRagQueryResponse,
   aiRagRebuildResponse,
-  aiEmbeddingTestRequest,
-  aiEmbeddingTestResponse,
+  aiRagStatusResponse,
 })

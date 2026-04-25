@@ -63,16 +63,24 @@ onClickOutside(itemRef, () => {
     data-sidebar-item
     :data-selected="isSelected ? 'true' : undefined"
     :data-focused="isFocused ? 'true' : undefined"
-    class="data-[selected=true]:bg-accent data-[focused=true]:bg-primary! data-[focused=true]:text-primary-foreground rounded-md"
+    class="group before:bg-primary data-[selected=true]:bg-accent/70 data-[focused=true]:bg-primary-soft! data-[focused=true]:text-foreground! relative rounded-md transition-[background-color,color] duration-150 ease-out before:absolute before:top-1/2 before:left-0 before:h-0 before:w-[2px] before:-translate-y-1/2 before:rounded-r-full before:opacity-0 before:transition-all before:duration-200 before:content-[''] data-[focused=true]:before:h-5 data-[focused=true]:before:opacity-100 data-[selected=true]:before:h-4 data-[selected=true]:before:opacity-60"
     :class="{ 'hover:bg-accent-hover': !isSelected && !isFocused }"
     @click="onItemClick(id)"
   >
-    <div class="ml-5.5 flex items-center">
+    <div class="ml-5 flex h-7 items-center gap-2 pr-2">
       <component
         :is="icon"
-        class="mr-0.5 h-4 w-4"
+        class="h-[15px] w-[15px] shrink-0 transition-colors"
+        :class="
+          isFocused
+            ? 'text-primary'
+            : isSelected
+              ? 'text-foreground/80'
+              : 'text-muted-foreground/90 group-hover:text-foreground/80'
+        "
+        stroke-width="1.6"
       />
-      <div class="ml-1 select-none">
+      <div class="tracking-[-0.005em] select-none">
         {{ name }}
       </div>
     </div>
