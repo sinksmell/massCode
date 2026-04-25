@@ -364,15 +364,28 @@ app
     '/:id/contents/:contentId',
     ({ params, status }) => {
       const storage = useStorage()
-      const { deleted } = storage.snippets.deleteSnippetContent(
-        Number(params.contentId),
-      )
+      const snippetId = Number(params.id)
+      const contentId = Number(params.contentId)
+
+      // Storage deletes by contentId alone, so a mismatched (snippetId,
+      // contentId) pair would still remove the content from its real owner
+      // while we reindex the wrong snippet. Reject the request when the
+      // content doesn't actually belong to the snippet in the URL.
+      const snippet = storage.snippets.getSnippetById(snippetId)
+      if (!snippet) {
+        return status(404, { message: 'Snippet not found' })
+      }
+      if (!snippet.contents.some(content => content.id === contentId)) {
+        return status(404, { message: 'Snippet content not found' })
+      }
+
+      const { deleted } = storage.snippets.deleteSnippetContent(contentId)
 
       if (!deleted) {
         return status(404, { message: 'Snippet content not found' })
       }
 
-      syncRagForSnippet(Number(params.id))
+      syncRagForSnippet(snippetId)
 
       return { message: 'Snippet content deleted' }
     },

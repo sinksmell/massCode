@@ -12,7 +12,21 @@ vi.mock('../../../utils', () => ({
 
 // Mock the embedder so tests run without loading the 30MB ONNX model.
 // The mock maps each known term to its own basis vector; cosine(a, b) = 1
-// when texts share a term, 0 otherwise.
+// when texts share a term, 0 otherwise. Some tests also want to pause
+// the "embedding" step to simulate races — `embedGate` and the helpers
+// below let them do that.
+let embedGate: Promise<void> | null = null
+function releaseEmbedGate() {
+  embedGate = null
+}
+function holdEmbedGate() {
+  let release!: () => void
+  embedGate = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  return release
+}
+
 vi.mock('../embedder', () => {
   const TERMS = ['alpha', 'beta', 'gamma', 'delta', 'epsilon']
 
@@ -39,8 +53,16 @@ vi.mock('../embedder', () => {
       for (let i = 0; i < a.length; i++) sum += a[i] * b[i]
       return sum
     },
-    embedText: async (text: string) => vectorize(text),
-    embedTexts: async (texts: string[]) => texts.map(vectorize),
+    embedText: async (text: string) => {
+      if (embedGate)
+        await embedGate
+      return vectorize(text)
+    },
+    embedTexts: async (texts: string[]) => {
+      if (embedGate)
+        await embedGate
+      return texts.map(vectorize)
+    },
   }
 })
 
@@ -195,5 +217,33 @@ describe('rag index', () => {
 
     expect(await queryRagIndex('', 5)).toEqual([])
     expect(await queryRagIndex('   ', 5)).toEqual([])
+  })
+
+  it('syncSnippetInRagIndex coalesces overlapping calls so the latest snapshot wins', async () => {
+    // Enqueue two syncs back-to-back for the same snippet while embedding
+    // is blocked. Without per-snippet serialization the older embedding
+    // could land after the newer one and leak stale vectors; the queue
+    // guarantees only the latest snapshot ends up persisted.
+    const release = holdEmbedGate()
+
+    const olderPromise = syncSnippetInRagIndex(
+      1,
+      makeSnippet(1, 's1', [{ id: 11, value: 'alpha' }]),
+    )
+    const newerPromise = syncSnippetInRagIndex(
+      1,
+      makeSnippet(1, 's1', [{ id: 99, value: 'beta' }]),
+    )
+
+    release()
+    releaseEmbedGate()
+    await Promise.all([olderPromise, newerPromise])
+
+    const alphaHit = await queryRagIndex('alpha', 5)
+    const betaHit = await queryRagIndex('beta', 5)
+
+    expect(alphaHit).toHaveLength(0)
+    expect(betaHit).toHaveLength(1)
+    expect(betaHit[0].contentId).toBe(99)
   })
 })

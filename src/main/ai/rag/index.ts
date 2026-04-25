@@ -99,14 +99,52 @@ export function removeSnippetFromRagIndexBySnippetId(snippetId: number) {
   removeBySnippetId(snippetId)
 }
 
-export async function syncSnippetInRagIndex(
+// Per-snippet serialization state. Two close edits to the same snippet fire
+// two async sync jobs; without a queue the older embed response can land
+// after the newer one, leaving /ai/rag/query with stale vectors. We chain
+// all jobs for a given snippet so they run in order, and coalesce aggressively:
+// if a newer enqueue supersedes an older one, the older job becomes a no-op
+// (the newer one will reflect the current snapshot anyway).
+const syncChainBySnippet = new Map<number, Promise<unknown>>()
+const syncSeqBySnippet = new Map<number, number>()
+
+export function syncSnippetInRagIndex(
   snippetId: number,
   snippet: SnippetRecord | null,
-) {
-  removeBySnippetId(snippetId)
-  if (snippet) {
-    await upsertSnippetInRagIndex(snippet)
-  }
+): Promise<void> {
+  const mySeq = (syncSeqBySnippet.get(snippetId) ?? 0) + 1
+  syncSeqBySnippet.set(snippetId, mySeq)
+
+  const previous = syncChainBySnippet.get(snippetId) ?? Promise.resolve()
+  const next: Promise<void> = previous
+    .then(async () => {
+      // A newer sync for this snippet was enqueued after us — skip and let
+      // the latest snapshot win. Avoids wasting an embedding call on a
+      // state we know is already stale.
+      if (syncSeqBySnippet.get(snippetId) !== mySeq) {
+        return
+      }
+      removeBySnippetId(snippetId)
+      if (snippet) {
+        await upsertSnippetInRagIndex(snippet)
+      }
+    })
+    .catch((error) => {
+      log('rag.syncSnippet', error)
+    })
+
+  syncChainBySnippet.set(snippetId, next)
+
+  void next.finally(() => {
+    // Release the slot only if this was the last enqueued job; otherwise
+    // a later one is still chained behind us and needs the map entry.
+    if (syncChainBySnippet.get(snippetId) === next) {
+      syncChainBySnippet.delete(snippetId)
+      syncSeqBySnippet.delete(snippetId)
+    }
+  })
+
+  return next
 }
 
 export async function queryRagIndex(query: string, limit: number) {
